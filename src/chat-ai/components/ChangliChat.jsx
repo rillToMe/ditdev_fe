@@ -76,9 +76,11 @@ function MessageBubble({ message }) {
             ? 'bg-bg-hover/60 border border-pixel-blue/20 text-pixel-white/90'
             : 'bg-pixel-blue/15 border border-pixel-blue/40 text-pixel-white ml-auto'
         }`}
-        style={{ clipPath: isAI
-          ? 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%)'
-          : 'polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px)'
+        style={{
+          clipPath: isAI
+            ? 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%)'
+            : 'polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px)',
+          background: isAI ? '#0d1528' : '#0a1a3a',
         }}
       >
         {isAI ? (
@@ -97,8 +99,8 @@ function TypingIndicator() {
     <div className="flex gap-2 items-center">
       <NpcAvatar size={28} />
       <div
-        className="px-3 py-2.5 bg-bg-hover/60 border border-pixel-blue/20 flex items-center gap-1"
-        style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%)' }}
+        className="px-3 py-2.5 border border-pixel-blue/20 flex items-center gap-1"
+        style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%)', background: '#0d1528' }}
       >
         {[0, 1, 2].map(i => (
           <motion.div
@@ -249,7 +251,7 @@ export default function ChangliChat() {
             }}
           >
             {/* Panel background */}
-            <div className="absolute inset-0 bg-bg-secondary/97 border border-pixel-cyan/25 backdrop-blur-md" />
+            <div className="absolute inset-0 border border-pixel-cyan/30" style={{ background: "#080c18" }} />
 
             {/* Content */}
             <div className="relative flex flex-col h-full">
@@ -311,7 +313,7 @@ export default function ChangliChat() {
                       onKeyDown={handleKey}
                       placeholder="Ask the guide..."
                       maxLength={500}
-                      className="w-full px-3 py-2 bg-bg-primary/60 border border-pixel-blue/20 font-mono text-xs text-pixel-white placeholder-pixel-gray/30 focus:outline-none focus:border-pixel-cyan/50 transition-all"
+                      className="w-full px-3 py-2 border border-pixel-blue/20 font-mono text-xs text-pixel-white placeholder-pixel-gray/30 focus:outline-none focus:border-pixel-cyan/50 transition-all" style={{ background: '#060a14' }}
                     />
                   </div>
                   <button
