@@ -4,6 +4,7 @@ import { X, Upload, Trash2, Plus, Github, Globe, Monitor } from 'lucide-react';
 import api, { getImageUrl } from '../services/api';
 import ImageCropper from './ImageCropper';
 import Portal from './Portal';
+import DiscardDialog from './DiscardDialog';
 
 const S = {
   overlay : 'fixed inset-0 z-50 flex items-center justify-center p-4',
@@ -83,6 +84,54 @@ export default function ProjectModal({ project, onClose, onSuccess }) {
   const [showCropper,  setShowCropper]  = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
+  // Discard guard
+  const [showDiscard, setShowDiscard] = useState(false);
+
+  const isEditing = !!project;
+  const hasChanges = () => {
+    if (isEditing) {
+      return (
+        formData.title       !== (project?.title       || '') ||
+        formData.description !== (project?.description || '') ||
+        formData.thumbnail   !== (project?.thumbnail   || '') ||
+        JSON.stringify(formData.tags)  !== JSON.stringify(project?.tags  || []) ||
+        JSON.stringify(formData.links) !== JSON.stringify(project?.links || [])
+      );
+    }
+    // New project — dirty if any field filled or file uploaded
+    return (
+      formData.title.trim()       !== '' ||
+      formData.description.trim() !== '' ||
+      formData.thumbnail          !== '' ||
+      formData.tags.length        > 0   ||
+      formData.links.length       > 0
+    );
+  };
+
+  // Called when user tries to close (backdrop click, X button, Cancel)
+  const handleAttemptClose = () => {
+    if (hasChanges()) {
+      setShowDiscard(true);
+    } else {
+      onClose();
+    }
+  };
+
+  // Confirmed discard — delete uploaded file from R2 if new (not pre-existing)
+  const handleConfirmDiscard = async () => {
+    const isNewUpload = formData.thumbnail && formData.thumbnail !== (project?.thumbnail || '');
+    if (isNewUpload && !isEditing) {
+      // Best-effort delete — fire and forget
+      try {
+        const url   = formData.thumbnail;
+        const fname = url.split('/').pop();
+        await api.deleteImage(fname, 'projects');
+      } catch { /* ignore */ }
+    }
+    setShowDiscard(false);
+    onClose();
+  };
+
   const handleImageSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -147,7 +196,7 @@ export default function ProjectModal({ project, onClose, onSuccess }) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className={S.overlay}
-        onClick={onClose}
+        onClick={handleAttemptClose}
       >
         {/* Backdrop */}
         <div className={S.backdrop} />
@@ -185,7 +234,7 @@ export default function ProjectModal({ project, onClose, onSuccess }) {
             <motion.button
               whileHover={{ rotate: 90, scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              onClick={onClose}
+              onClick={handleAttemptClose}
               className="p-1.5 text-[rgba(148,163,184,0.4)] hover:text-[rgba(148,163,184,0.8)] transition-colors"
             >
               <X className="w-5 h-5" />
@@ -411,7 +460,7 @@ export default function ProjectModal({ project, onClose, onSuccess }) {
               className="flex gap-3 pt-4"
               style={{ borderTop: '1px solid rgba(79,140,255,0.08)' }}
             >
-              <button type="button" onClick={onClose} className={S.btnGhost} style={{ clipPath: pixelClip }}>
+              <button type="button" onClick={handleAttemptClose} className={S.btnGhost} style={{ clipPath: pixelClip }}>
                 CANCEL
               </button>
               <button
@@ -444,6 +493,12 @@ export default function ProjectModal({ project, onClose, onSuccess }) {
           />
         )}
       </AnimatePresence>
+      <DiscardDialog
+        open={showDiscard}
+        onCancel={() => setShowDiscard(false)}
+        onConfirm={handleConfirmDiscard}
+        isDeleting={!!(formData.thumbnail && formData.thumbnail !== (project?.thumbnail || ''))}
+      />
       </>
     </Portal>
   );

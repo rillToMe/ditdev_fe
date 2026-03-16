@@ -4,6 +4,7 @@ import { X, Upload, Trash2, FileText, ExternalLink } from 'lucide-react';
 import api, { getImageUrl } from '../services/api';
 import ImageCropper from './ImageCropper';
 import Portal from './Portal';
+import DiscardDialog from './DiscardDialog';
 
 const S = {
   input: [
@@ -73,6 +74,57 @@ export default function CertificateModal({ certificate, onClose, onSuccess }) {
   const [showCropper,  setShowCropper]  = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
+  // Discard guard
+  const [showDiscard, setShowDiscard] = useState(false);
+
+  const isEditing = !!certificate;
+  const hasChanges = () => {
+    if (isEditing) {
+      return (
+        formData.title          !== (certificate?.title          || '') ||
+        formData.provider       !== (certificate?.provider       || '') ||
+        formData.thumbnail      !== (certificate?.thumbnail      || '') ||
+        formData.issue_date     !== (certificate?.issue_date     || '') ||
+        formData.credential_url !== (certificate?.credential_url || '') ||
+        formData.pdf_file       !== (certificate?.pdf_file       || '')
+      );
+    }
+    return (
+      formData.title.trim()    !== '' ||
+      formData.provider.trim() !== '' ||
+      formData.thumbnail       !== '' ||
+      formData.pdf_file        !== ''
+    );
+  };
+
+  const handleAttemptClose = () => {
+    if (hasChanges()) {
+      setShowDiscard(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleConfirmDiscard = async () => {
+    // Delete newly uploaded files from R2 (only for new certs, not edits)
+    const isNewThumb = formData.thumbnail && formData.thumbnail !== (certificate?.thumbnail || '');
+    const isNewPDF   = formData.pdf_file  && formData.pdf_file  !== (certificate?.pdf_file  || '');
+    if (!isEditing) {
+      try {
+        if (isNewThumb) {
+          const fname = formData.thumbnail.split('/').pop();
+          await api.deleteImage(fname, 'certificates');
+        }
+        if (isNewPDF) {
+          const fname = formData.pdf_file.split('/').pop();
+          await api.deleteImage(fname, 'pdf_certif');
+        }
+      } catch { /* ignore */ }
+    }
+    setShowDiscard(false);
+    onClose();
+  };
+
   const handleImageSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -140,7 +192,7 @@ export default function CertificateModal({ certificate, onClose, onSuccess }) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        onClick={onClose}
+        onClick={handleAttemptClose}
       >
         {/* Backdrop */}
         <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
@@ -177,7 +229,7 @@ export default function CertificateModal({ certificate, onClose, onSuccess }) {
             <motion.button
               whileHover={{ rotate: 90, scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              onClick={onClose}
+              onClick={handleAttemptClose}
               className="p-1.5 text-[rgba(148,163,184,0.4)] hover:text-[rgba(148,163,184,0.8)] transition-colors"
             >
               <X className="w-5 h-5" />
@@ -387,7 +439,7 @@ export default function CertificateModal({ certificate, onClose, onSuccess }) {
               className="flex gap-3 pt-4"
               style={{ borderTop: '1px solid rgba(79,140,255,0.08)' }}
             >
-              <button type="button" onClick={onClose} className={S.btnGhost} style={{ clipPath: pixelClip }}>
+              <button type="button" onClick={handleAttemptClose} className={S.btnGhost} style={{ clipPath: pixelClip }}>
                 CANCEL
               </button>
               <button
@@ -420,6 +472,12 @@ export default function CertificateModal({ certificate, onClose, onSuccess }) {
           />
         )}
       </AnimatePresence>
+      <DiscardDialog
+        open={showDiscard}
+        onCancel={() => setShowDiscard(false)}
+        onConfirm={handleConfirmDiscard}
+        isDeleting={!isEditing && !!(formData.thumbnail || formData.pdf_file)}
+      />
       </>
     </Portal>
   );
