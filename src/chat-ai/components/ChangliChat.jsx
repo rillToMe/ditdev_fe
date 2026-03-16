@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiSend, FiZap } from 'react-icons/fi';
 import { useChat } from '../hooks/useChat';
-import MarkdownRenderer from './MarkdownRenderer';
+
+const MarkdownRenderer = lazy(() => import("./MarkdownRenderer"));
 
 import avatarImg from '../../assets/img/icons/ai_icon.jpg';
 
@@ -84,7 +85,9 @@ function MessageBubble({ message }) {
         }}
       >
         {isAI ? (
-          <MarkdownRenderer content={message.content} />
+          <Suspense fallback={<p>...</p>}>
+            <MarkdownRenderer content={message.content} />
+          </Suspense>
         ) : (
           <p className="text-[11px] leading-relaxed">{message.content}</p>
         )}

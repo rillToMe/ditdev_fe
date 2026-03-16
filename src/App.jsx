@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
 import RightClickGuard from './custom/RightClickGuard';
 // import IdleManager     from './custom/IdleManager';
 import NotFound        from './custom/NotFound';
-import AdminApp        from './admin/App';
+const AdminApp = lazy(() => import("./admin/App"));
 
 import GameLoadingScreen from './components/GameLoadingScreen';
 import Navbar            from './components/Navbar';
@@ -16,9 +16,11 @@ import Skills            from './components/Skills';
 import Contact           from './components/Contact';
 import Footer            from './components/Footer';
 import SectionDivider    from './components/SectionDivider';
-import ChangliChat       from './chat-ai/components/ChangliChat';
-import GitHubActivity   from './components/GithubActivity';
+const GitHubActivity = lazy(() => import("./components/GithubActivity"));
 import Education        from './components/Education';
+
+// chat ai
+const ChangliChat = lazy(() => import("./chat-ai/components/ChangliChat"));
 
 function Portfolio() {
   const [loaded, setLoaded] = useState(false);
@@ -51,7 +53,9 @@ function Portfolio() {
           <Contact />
         </main>
         <Footer />
-        <ChangliChat />
+        <Suspense fallback={null}>
+          <ChangliChat />
+        </Suspense>
       </div>
     </div>
   );
@@ -61,12 +65,14 @@ export default function App() {
   return (
     <RightClickGuard>
       {/* <IdleManager> */}
-        <Routes>
-          <Route path="/"       element={<Portfolio />} />
-          <Route path="/admin"  element={<AdminApp />}  />
-          <Route path="/admin/*" element={<AdminApp />} />
-          <Route path="*"       element={<NotFound />}  />
-        </Routes>
+        <Suspense fallback={null}>
+          <Routes>
+            <Route path="/" element={<Portfolio />} />
+            <Route path="/admin" element={<AdminApp />} />
+            <Route path="/admin/*" element={<AdminApp />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       {/* </IdleManager> */}
     </RightClickGuard>
   );
