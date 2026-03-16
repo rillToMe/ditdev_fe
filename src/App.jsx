@@ -1,7 +1,8 @@
-import { useState, lazy, Suspense } from 'react';
+import { useState, lazy, Suspense, useEffect, useRef } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
 import RightClickGuard from './custom/RightClickGuard';
+import SectionLoader   from './custom/SectionLoader';
 // import IdleManager     from './custom/IdleManager';
 import NotFound        from './custom/NotFound';
 const AdminApp = lazy(() => import("./admin/App"));
@@ -10,8 +11,13 @@ import GameLoadingScreen from './components/GameLoadingScreen';
 import Navbar            from './components/Navbar';
 import Hero              from './components/Hero';
 import About             from './components/About';
-import Projects          from './components/Projects';
-import Certificates      from './components/Certificates';
+
+const Projects = lazy(() => import("./components/Projects"))
+const Certificates = lazy(() => import("./components/Certificates"))
+
+const preloadProjects = () => import("./components/Projects")
+const preloadCertificates = () => import("./components/Certificates")
+
 import Skills            from './components/Skills';
 import Contact           from './components/Contact';
 import Footer            from './components/Footer';
@@ -23,7 +29,30 @@ import Education        from './components/Education';
 const ChangliChat = lazy(() => import("./chat-ai/components/ChangliChat"));
 
 function Portfolio() {
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(false)
+
+  const preloadRef = useRef(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          preloadProjects()
+          preloadCertificates()
+          observer.disconnect()
+        }
+      },
+      {
+        rootMargin: "400px"
+      }
+    )
+
+    if (preloadRef.current) {
+      observer.observe(preloadRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <div className="min-h-screen bg-bg-primary relative overflow-x-hidden">
@@ -42,9 +71,19 @@ function Portfolio() {
           <SectionDivider />
           <About />
           <SectionDivider />
-          <Projects />
+
+          <div ref={preloadRef}></div>
+
+          <Suspense fallback={<SectionLoader label="LOADING PROJECTS..." />}>
+            <Projects />
+          </Suspense>
+
           <SectionDivider />
-          <Certificates />
+
+          <Suspense fallback={<SectionLoader label="LOADING CERTIFICATES..." />}>
+            <Certificates />
+          </Suspense>
+
           <SectionDivider />
           <Skills />
           <Education />
@@ -65,7 +104,7 @@ export default function App() {
   return (
     <RightClickGuard>
       {/* <IdleManager> */}
-        <Suspense fallback={null}>
+        <Suspense fallback={<SectionLoader height='min-h-screen' />}>
           <Routes>
             <Route path="/" element={<Portfolio />} />
             <Route path="/admin" element={<AdminApp />} />

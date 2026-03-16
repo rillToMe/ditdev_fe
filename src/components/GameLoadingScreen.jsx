@@ -43,6 +43,13 @@ export default function GameLoadingScreen({ onComplete }) {
   const [fadeOut,   setFadeOut]   = useState(false);
   const [dots,      setDots]      = useState('');
 
+
+    // Lock scroll while loading screen is visible
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+  
   //Sprite animation 
   useEffect(() => {
     const canvas = canvasRef.current;

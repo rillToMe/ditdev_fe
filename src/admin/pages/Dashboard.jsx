@@ -165,7 +165,7 @@ export default function Dashboard({ admin, onLogout }) {
             <div>
               <h1 className="font-pixel text-xs tracking-widest text-[#e2e8f0]">PORTFOLIO ADMIN</h1>
               <p className="font-mono text-[10px] text-[rgba(148,163,184,0.35)]">
-                welcome, <span style={{ color: '#4f8cff' }}>{admin.username}</span>
+                welcome,<span style={{ color: '#ba8d13' }}> KING </span><span style={{ color: '#4f8cff' }}>{admin.username}</span>
               </p>
             </div>
           </motion.div>
