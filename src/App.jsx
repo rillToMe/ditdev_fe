@@ -104,7 +104,7 @@ export default function App() {
   return (
     <RightClickGuard>
       {/* <IdleManager> */}
-        <Suspense fallback={<SectionLoader height='min-h-screen' />}>
+        <Suspense fallback={null}>
           <Routes>
             <Route path="/" element={<Portfolio />} />
             <Route path="/admin" element={<AdminApp />} />
