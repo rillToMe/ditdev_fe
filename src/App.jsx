@@ -28,6 +28,45 @@ import Education        from './components/Education';
 // chat ai
 const ChangliChat = lazy(() => import("./chat-ai/components/ChangliChat"));
 
+//SEO Meta Tags
+const SITE_URL    = 'https://ditdev.kyuzenstudio.com';
+const OG_IMAGE    = `${SITE_URL}/og-image.png`; // 1200x630px
+ 
+function SEO() {
+  return (
+    <Helmet>
+      {/* Primary */}
+      <title>Rahmat Aditya - Game Developer & Web Enthusiast</title>
+      <meta name="description" content="Portfolio of Rahmat Aditya, a Game Developer and Web Enthusiast from Sumatera Barat, Indonesia. Specializing in Unity, Godot, C#, and React." />
+      <meta name="keywords" content="Rahmat Aditya, Game Developer, Unity, Godot, C#, React, Web Developer, Sumatera Barat, Indonesia, indie game, portfolio" />
+      <meta name="author" content="Rahmat Aditya" />
+      <link rel="canonical" href={SITE_URL} />
+ 
+      {/* Open Graph - Facebook, WhatsApp, Discord, Telegram */}
+      <meta property="og:type"        content="website" />
+      <meta property="og:url"         content={SITE_URL} />
+      <meta property="og:title"       content="Rahmat Aditya - Game Developer & Web Enthusiast" />
+      <meta property="og:description" content="Game Developer from Sumatera Barat. Building worlds with Unity, Godot & React. Check out my projects and skills." />
+      <meta property="og:image"       content={OG_IMAGE} />
+      <meta property="og:image:width"  content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:site_name"   content="Rahmat Aditya Portfolio" />
+      <meta property="og:locale"      content="en_US" />
+ 
+      {/* Twitter Card */}
+      <meta name="twitter:card"        content="summary_large_image" />
+      <meta name="twitter:url"         content={SITE_URL} />
+      <meta name="twitter:title"       content="Rahmat Aditya - Game Developer & Web Enthusiast" />
+      <meta name="twitter:description" content="Game Developer from Sumatera Barat. Building worlds with Unity, Godot & React." />
+      <meta name="twitter:image"       content={OG_IMAGE} />
+ 
+      {/* Extra */}
+      <meta name="robots"   content="index, follow" />
+      <meta name="theme-color" content="#0a0e1a" />
+    </Helmet>
+  );
+}
+
 function Portfolio() {
   const [loaded, setLoaded] = useState(false)
 
@@ -56,6 +95,7 @@ function Portfolio() {
 
   return (
     <div className="min-h-screen bg-bg-primary relative overflow-x-hidden">
+      <SEO />
       <div
         className="fixed inset-0 pointer-events-none z-0"
         style={{
