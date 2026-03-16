@@ -4,6 +4,7 @@ import { Routes, Route } from 'react-router-dom';
 import RightClickGuard from './custom/RightClickGuard';
 // import IdleManager     from './custom/IdleManager';
 import NotFound        from './custom/NotFound';
+import AdminApp        from './admin/App';
 
 import GameLoadingScreen from './components/GameLoadingScreen';
 import Navbar            from './components/Navbar';
@@ -61,8 +62,10 @@ export default function App() {
     <RightClickGuard>
       {/* <IdleManager> */}
         <Routes>
-          <Route path="/"  element={<Portfolio />} />
-          <Route path="*"  element={<NotFound />}  />
+          <Route path="/"       element={<Portfolio />} />
+          <Route path="/admin"  element={<AdminApp />}  />
+          <Route path="/admin/*" element={<AdminApp />} />
+          <Route path="*"       element={<NotFound />}  />
         </Routes>
       {/* </IdleManager> */}
     </RightClickGuard>

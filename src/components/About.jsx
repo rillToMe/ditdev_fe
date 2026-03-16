@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { FiGithub, FiInstagram, FiCode, FiTool } from 'react-icons/fi';
+import { FiGithub, FiInstagram} from 'react-icons/fi';
 import { SiTiktok, SiUnity, SiGodotengine, SiReact, SiBlender, SiUnrealengine, SiGithub } from 'react-icons/si';
 import axios from 'axios';
+import { DiVisualstudio } from 'react-icons/di'
+import { BiLogoVisualStudio } from "react-icons/bi";
+import { TbBrandCSharp } from "react-icons/tb";
+import { LuInfinity } from "react-icons/lu";
+
+<LuInfinity className="inline text-yellow-400" size={14} />
 
 import avatarImg from '../assets/img/icons/avatar.jpeg';
 
@@ -11,12 +17,12 @@ const techStack = [
   { icon: <SiUnity />,        name: 'Unity',         color: '#ffffff' },
   { icon: <SiGodotengine />,  name: 'Godot',         color: '#478cbf' },
   { icon: <SiReact />,        name: 'React',         color: '#61dafb' },
-  { icon: <FiCode />,         name: 'C#',            color: '#9b4f96' },
+  { icon: <TbBrandCSharp />,  name: 'C#',            color: '#9b4f96' },
   { icon: <SiUnrealengine />, name: 'Unreal',        color: '#aaaaaa' },
   { icon: <SiBlender />,      name: 'Blender',       color: '#f5792a' },
   { icon: <SiGithub />,       name: 'GitHub',        color: '#f0f6fc' },
-  { icon: <FiTool />,         name: 'VS Code',       color: '#007acc' },
-  { icon: <FiTool />,         name: 'Visual Studio', color: '#5c2d91' },
+  { icon: <BiLogoVisualStudio />,         name: 'VS Code',       color: '#007acc' },
+  { icon: <DiVisualstudio />,         name: 'Visual Studio', color: '#5c2d91' },
 ];
 
 const KEY_COLORS = {
@@ -37,7 +43,7 @@ const formatValue = (val) => {
   return String(val);
 };
 
-// Hardcoded stats always displayed — top-left & bottom-left positions
+// Hardcoded stats always displayed - top-left & bottom-left positions
 const HARDCODED_STATS = [
   { key: 'cups_of_coffee', value: '∞', label: 'Cups of Coffee' },
   { key: 'bugs_fixed',     value: '∞', label: 'Bugs Fixed'     },
@@ -137,8 +143,8 @@ export default function About() {
               <div className="absolute -bottom-1.5 -right-1.5 w-4 h-4 border-b-2 border-r-2 border-pixel-blue/80" />
               <div className="absolute top-1 right-1 w-2 h-2 bg-pixel-cyan animate-pulse" />
               <div className="absolute bottom-1 left-1 w-2 h-2 bg-pixel-blue animate-pulse" style={{ animationDelay: '0.5s' }} />
-              <div className="absolute -bottom-3 -right-3 px-2 py-1 bg-bg-primary border border-yellow-400/50 font-pixel text-yellow-400 text-xs">
-                LVL 2+
+              <div className="absolute -bottom-3 -right-3 px-2 py-1 bg-bg-primary border border-yellow-400/50 font-pixel text-yellow-400 text-xs flex items-center gap-1">
+                LVL <LuInfinity size={12} />+
               </div>
             </motion.div>
 

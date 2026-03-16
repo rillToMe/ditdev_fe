@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { FiLoader, FiExternalLink, FiAward, FiX, FiCalendar } from 'react-icons/fi';
 import { certificatesAPI } from '../services/api';
+import { LuFileText } from "react-icons/lu";
 
 const FALLBACK_CERTS = [
   {
@@ -123,18 +124,27 @@ const CertModal = ({ cert, onClose }) => {
               </div>
             )}
 
-            {/* Actions */}
+           {/* Actions */}
             <div className="flex gap-3 pt-2">
               {cert.pdf_file && (
-                <a href={cert.pdf_file} target="_blank" rel="noopener noreferrer"
-                  className="btn-pixel text-xs flex items-center gap-2">
-                  <span>📄</span> View PDF
+                <a
+                  href={cert.pdf_file}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-pixel text-xs flex items-center gap-2"
+                >
+                  <LuFileText size={14} /> View PDF
                 </a>
               )}
+
               {cert.credential_url && (
-                <a href={cert.credential_url} target="_blank" rel="noopener noreferrer"
-                  className="btn-pixel text-xs flex items-center gap-2">
-                  <FiExternalLink /> Verify
+                <a
+                  href={cert.credential_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-pixel text-xs flex items-center gap-2"
+                >
+                  <FiExternalLink size={14}/> Verify
                 </a>
               )}
             </div>

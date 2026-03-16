@@ -5,9 +5,12 @@ import {
   SiReact, SiJavascript, SiNodedotjs, SiHtml5, SiPostgresql,
   SiGithub,
 } from 'react-icons/si';
-import { FiCode, FiTool } from 'react-icons/fi';
+import { FiCode } from 'react-icons/fi';
 import { DiVisualstudio } from 'react-icons/di'
 import { BiLogoVisualStudio } from "react-icons/bi";
+import { TbBrandCSharp } from "react-icons/tb";
+import { LuInfinity } from "react-icons/lu";
+
 
 // Constellation
 const SKILLS = [
@@ -16,7 +19,7 @@ const SKILLS = [
   { id: 'unreal',     label: 'Unreal Engine', icon: SiUnrealengine, category: 'gamedev',  x: 0.30, y: 0.68, tier: 'apprentice',   connects: ['unity','blender'] },
   { id: 'vs',         label: 'VisualStudio',  icon: DiVisualstudio,         category: 'tools',    x: 0.48, y: 0.47, tier: 'legendary',    connects: ['unity','unreal', 'csharp', 'github'] },
   { id: 'blender',    label: 'Blender',       icon: SiBlender,      category: 'design',   x: 0.10, y: 0.78, tier: 'advanced',     connects: ['unity','godot','unreal'] },
-  { id: 'csharp',     label: 'C#',            icon: FiCode,         category: 'language', x: 0.40, y: 0.25, tier: 'legendary',    connects: ['unity','javascript', 'vscode'] },
+  { id: 'csharp',     label: 'C#',            icon: TbBrandCSharp,         category: 'language', x: 0.40, y: 0.25, tier: 'legendary',    connects: ['unity','javascript', 'vscode'] },
   { id: 'javascript', label: 'JavaScript',    icon: SiJavascript,   category: 'language', x: 0.58, y: 0.25, tier: 'advanced',     connects: ['csharp','react','nodejs','html'] },
   { id: 'react',      label: 'React',         icon: SiReact,        category: 'web',      x: 0.74, y: 0.18, tier: 'advanced',     connects: ['javascript','html','nodejs'] },
   { id: 'html',       label: 'HTML/CSS',      icon: SiHtml5,        category: 'web',      x: 0.84, y: 0.42, tier: 'legendary',    connects: ['react','javascript', 'vscode', 'vs', 'nodejs'] },
@@ -131,10 +134,10 @@ function XPBar() {
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-pixel text-yellow-400 text-xs">DEVELOPER EXP</p>
-            {/* No level badge - infinite */}
-            <span className="font-pixel text-[10px] px- py-0.5 border border-yellow-400/30 bg-yellow-400/10 text-yellow-400">
-              LVL ∞
-            </span>
+           <span className="font-pixel text-[10px] px-1 py-0.5 border border-yellow-400/30 bg-yellow-400/10 text-yellow-400 flex items-center gap-1">
+            LVL
+            <LuInfinity size={10} className="relative -top-[1px]" />
+          </span>
           </div>
           <p className="font-mono text-pixel-gray/40 text-[10px] mt-1 max-w-xs leading-relaxed">
             Technology evolves every day. There is no max level.
