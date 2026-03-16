@@ -1,5 +1,6 @@
 import { useState, lazy, Suspense, useEffect, useRef } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import { Helmet, HelmetProvider } from 'react-helmet-async';
 
 import RightClickGuard from './custom/RightClickGuard';
 import SectionLoader   from './custom/SectionLoader';
@@ -142,17 +143,19 @@ function Portfolio() {
 
 export default function App() {
   return (
-    <RightClickGuard>
-      {/* <IdleManager> */}
-        <Suspense fallback={null}>
-          <Routes>
-            <Route path="/" element={<Portfolio />} />
-            <Route path="/admin" element={<AdminApp />} />
-            <Route path="/admin/*" element={<AdminApp />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      {/* </IdleManager> */}
-    </RightClickGuard>
+    <HelmetProvider>
+      <RightClickGuard>
+        {/* <IdleManager> */}
+          <Suspense fallback={null}>
+            <Routes>
+              <Route path="/" element={<Portfolio />} />
+              <Route path="/admin" element={<AdminApp />} />
+              <Route path="/admin/*" element={<AdminApp />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        {/* </IdleManager> */}
+      </RightClickGuard>
+    </HelmetProvider>
   );
 }
