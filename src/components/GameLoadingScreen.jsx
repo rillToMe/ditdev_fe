@@ -90,11 +90,11 @@ export default function GameLoadingScreen({ onComplete }) {
     let tipIndex = 0;
 
     const progressSteps = [
-  { target: 20,  delay: 60 },
-  { target: 50,  delay: 45 },
-  { target: 80,  delay: 55 },
-  { target: 100, delay: 40 },
-];
+      { target: 20,  delay: 18 },
+      { target: 50,  delay: 18 },
+      { target: 80,  delay: 18 },
+      { target: 100, delay: 18 },
+    ];
 
     let stepIndex = 0;
 
@@ -123,17 +123,17 @@ export default function GameLoadingScreen({ onComplete }) {
       } else {
         stepIndex++;
         if (stepIndex < progressSteps.length) {
-          setTimeout(tick, 200); 
+          setTimeout(tick, 50); 
         } else {
           setTimeout(() => {
             setFadeOut(true);
-            setTimeout(() => onComplete?.(), 600);
-          }, 400);
+            setTimeout(() => onComplete?.(), 300);
+          }, 150);
         }
       }
     };
 
-    setTimeout(tick, 300);
+    setTimeout(tick, 100);
   }, [onComplete]);
 
   //Blinking dots 
