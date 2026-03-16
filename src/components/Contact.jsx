@@ -3,9 +3,8 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { FiGithub, FiInstagram, FiMail, FiMapPin, FiSend } from 'react-icons/fi';
 import { SiTiktok } from 'react-icons/si';
-import axios from 'axios';
+import { contactAPI } from '../services/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const contacts = [
   {
@@ -62,7 +61,7 @@ export default function Contact() {
     setErrorMsg('');
 
     try {
-      await axios.post(`${API_URL}/api/contact`, form);
+      await contactAPI.send(form);
       setStatus('sent');
       setForm({ name: '', email: '', message: '' });
     } catch (err) {

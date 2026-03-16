@@ -22,4 +22,7 @@ export const statsAPI = {
   getByKey: (key) => api.get(`/stats/${key}`),
 };
 
+export const contactAPI = {
+  send: (data) => api.post('/contact', data),
+};
 export default api;
