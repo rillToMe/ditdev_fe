@@ -1,9 +1,11 @@
+// src/chat-ai/hooks/useChat.js
+// Manages chat state + scroll-aware section detection
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { sendChatMessage } from '../services/chatService';
 
-// Opening message from CHANGLI-AI
+// Opening message dari CHANGLI-AI
 const OPENING_MESSAGE = {
-  id     : 'msg-0',
   role   : 'assistant',
   content: `🟢 CHANGLI-AI ONLINE
 
@@ -21,7 +23,7 @@ You may ask me about his:
 Or simply explore the realm yourself.`,
 };
 
-// Section detection for scroll awareness
+// Section detection untuk scroll awareness
 const SECTIONS = [
   { id: 'home',         hint: 'Ah, you stand at the entrance of the realm. Welcome, traveler. ⚔️' },
   { id: 'about',        hint: 'You are reading the lore of Rahmat Aditya. A developer forged by passion. 📖' },
@@ -37,9 +39,11 @@ export function useChat() {
   const [isLoading,    setIsLoading]    = useState(false);
   const [isOpen,       setIsOpen]       = useState(false);
   const [sectionHint,  setSectionHint]  = useState(null);
-  const lastSectionRef = useRef('');
+  const lastSectionRef    = useRef('');
+  const currentSectionRef  = useRef('');
   const hintTimerRef   = useRef(null);
 
+  // ── Scroll awareness ──────────────────────────────────
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY + window.innerHeight / 2;
@@ -51,9 +55,12 @@ export function useChat() {
       }
 
       if (current && current !== lastSectionRef.current) {
-        lastSectionRef.current = current;
+        lastSectionRef.current   = current;
+        currentSectionRef.current = current;
         const found = SECTIONS.find(s => s.id === current);
 
+        // Tampilkan hint hanya kalau chat tidak sedang open
+        // dan hanya setelah user sudah interaksi minimal (bukan first load)
         if (found && messages.length > 1) {
           clearTimeout(hintTimerRef.current);
           hintTimerRef.current = setTimeout(() => {
@@ -72,7 +79,7 @@ export function useChat() {
     };
   }, [messages.length]);
 
-  //Send message
+  // ── Send message ──────────────────────────────────────
   const sendMessage = useCallback(async (text) => {
     const content = (text || input).trim();
     if (!content || isLoading) return;
@@ -80,21 +87,21 @@ export function useChat() {
     setInput('');
     setSectionHint(null);
 
-    const userMsg  = { id: `msg-${Date.now()}`, role: 'user', content };
+    const userMsg  = { role: 'user', content };
     const newMsgs  = [...messages, userMsg];
     setMessages(newMsgs);
     setIsLoading(true);
 
     try {
+      // Kirim hanya role user/assistant ke backend (skip system)
       const history = newMsgs.filter(m => m.role !== 'system');
-      const reply   = await sendChatMessage(history);
+      const reply   = await sendChatMessage(history, currentSectionRef.current || '');
 
-      setMessages(prev => [...prev, { id: `msg-${Date.now()}-r`, role: 'assistant', content: reply }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
     } catch (err) {
       setMessages(prev => [
         ...prev,
         {
-          id     : `msg-${Date.now()}-e`,
           role   : 'assistant',
           content: `A disturbance in the realm...\n\n${err.message}\n\nTry again, traveler.`,
         },
@@ -104,7 +111,7 @@ export function useChat() {
     }
   }, [input, messages, isLoading]);
 
-  //Quick prompts
+  // ── Quick prompts ─────────────────────────────────────
   const quickPrompts = [
     { label: '⚔️ Projects',     text: 'Tell me about his projects' },
     { label: '📊 Skills',       text: 'What is his skill tree?' },
