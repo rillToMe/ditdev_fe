@@ -23,7 +23,7 @@ import Skills            from './components/Skills';
 import Contact           from './components/Contact';
 import Footer            from './components/Footer';
 import SectionDivider    from './components/SectionDivider';
-const GitHubActivity = lazy(() => import("./components/Githubactivity"));
+const GitHubActivity = lazy(() => import("./components/GithubActivity"));
 import Education        from './components/Education';
 
 // chat ai
