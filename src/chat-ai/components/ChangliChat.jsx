@@ -1,6 +1,6 @@
 import { useEffect, useRef, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiSend, FiZap } from 'react-icons/fi';
+import { FiX, FiSend, FiZap, FiEdit } from 'react-icons/fi';
 import { useChat } from '../hooks/useChat';
 
 const MarkdownRenderer = lazy(() => import("./MarkdownRenderer"));
@@ -124,6 +124,7 @@ export default function ChangliChat() {
     messages, input, setInput, isLoading,
     isOpen, setIsOpen, sendMessage,
     sectionHint, setSectionHint, quickPrompts,
+    resetChat,
   } = useChat();
 
   const bottomRef  = useRef(null);
@@ -271,6 +272,13 @@ export default function ChangliChat() {
                     Guardian of Rahmat's Portfolio · Quest Guide
                   </p>
                 </div>
+                <button
+                  onClick={resetChat}
+                  title="New chat"
+                  className="text-pixel-gray/40 hover:text-pixel-cyan transition-colors p-1"
+                >
+                  <FiEdit className="text-sm" />
+                </button>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="text-pixel-gray/40 hover:text-pixel-white transition-colors p-1"

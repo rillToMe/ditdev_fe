@@ -105,22 +105,17 @@ export default function CertificateModal({ certificate, onClose, onSuccess }) {
     }
   };
 
+  // Best-effort R2 cleanup for an upload that is no longer referenced.
+  // Skips the certificate's original files — the backend deletes those on save.
+  const dropUpload = async (url, type, original) => {
+    if (!url || url === (original || '')) return;
+    try { await api.deleteImage(url.split('/').pop(), type); } catch { /* ignore */ }
+  };
+
   const handleConfirmDiscard = async () => {
-    // Delete newly uploaded files from R2 (only for new certs, not edits)
-    const isNewThumb = formData.thumbnail && formData.thumbnail !== (certificate?.thumbnail || '');
-    const isNewPDF   = formData.pdf_file  && formData.pdf_file  !== (certificate?.pdf_file  || '');
-    if (!isEditing) {
-      try {
-        if (isNewThumb) {
-          const fname = formData.thumbnail.split('/').pop();
-          await api.deleteImage(fname, 'certificates');
-        }
-        if (isNewPDF) {
-          const fname = formData.pdf_file.split('/').pop();
-          await api.deleteImage(fname, 'pdf_certif');
-        }
-      } catch { /* ignore */ }
-    }
+    // Delete newly uploaded files from R2 (originals are left to the backend)
+    await dropUpload(formData.thumbnail, 'certificates', certificate?.thumbnail);
+    await dropUpload(formData.pdf_file,  'pdf_certif',   certificate?.pdf_file);
     setShowDiscard(false);
     onClose();
   };
@@ -141,7 +136,9 @@ export default function CertificateModal({ certificate, onClose, onSuccess }) {
       const croppedFile = new File([croppedBlob], selectedFile.name, { type: 'image/jpeg' });
       const data = await api.uploadImage(croppedFile, 'certificates');
       if (data.success && data.data?.path) {
+        const replaced = formData.thumbnail;
         setFormData(prev => ({ ...prev, thumbnail: data.data.path }));
+        await dropUpload(replaced, 'certificates', certificate?.thumbnail);
       } else throw new Error('Invalid upload response');
     } catch (err) {
       alert('Upload failed: ' + err.message);
@@ -307,7 +304,7 @@ export default function CertificateModal({ certificate, onClose, onSuccess }) {
                       <span className="font-pixel text-[10px] text-white/80 tracking-widest">PREVIEW</span>
                       <button
                         type="button"
-                        onClick={() => setFormData(p => ({ ...p, thumbnail: '' }))}
+                        onClick={() => { dropUpload(formData.thumbnail, 'certificates', certificate?.thumbnail); setFormData(p => ({ ...p, thumbnail: '' })); }}
                         className="p-1.5 bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/40 transition"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -390,7 +387,7 @@ export default function CertificateModal({ certificate, onClose, onSuccess }) {
                       </a>
                       <button
                         type="button"
-                        onClick={() => setFormData(p => ({ ...p, pdf_file: '' }))}
+                        onClick={() => { dropUpload(formData.pdf_file, 'pdf_certif', certificate?.pdf_file); setFormData(p => ({ ...p, pdf_file: '' })); }}
                         className="p-1.5 text-red-500/50 hover:text-red-400 hover:bg-red-500/10 transition-all"
                         style={{ clipPath: pixelClip }}
                         title="Remove PDF"
@@ -476,7 +473,10 @@ export default function CertificateModal({ certificate, onClose, onSuccess }) {
         open={showDiscard}
         onCancel={() => setShowDiscard(false)}
         onConfirm={handleConfirmDiscard}
-        isDeleting={!isEditing && !!(formData.thumbnail || formData.pdf_file)}
+        isDeleting={
+          (!!formData.thumbnail && formData.thumbnail !== (certificate?.thumbnail || '')) ||
+          (!!formData.pdf_file  && formData.pdf_file  !== (certificate?.pdf_file  || ''))
+        }
       />
       </>
     </Portal>

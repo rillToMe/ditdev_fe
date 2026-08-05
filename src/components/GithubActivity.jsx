@@ -4,13 +4,16 @@ import { useInView } from 'react-intersection-observer';
 import { FiGithub, FiGitCommit, FiStar, FiCode, FiExternalLink, FiLoader, FiRefreshCw } from 'react-icons/fi';
 
 const GITHUB_USERNAME = 'rillToMe';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 const ContribHeatmap = ({ username }) => {
   const [loaded,  setLoaded]  = useState(false);
   const [errored, setErrored] = useState(false);
   const [key,     setKey]     = useState(0); 
 
-  const chartUrl = `https://ghchart.rshah.org/4f8cff/${username}`;
+  // Proxied via the backend so the browser caches it (Cache-Control) and doesn't
+  // re-fetch on every tab switch. Backend falls back to the activity-graph service.
+  const chartUrl = `${API_BASE}/github/heatmap`;
 
   // Fallback: github-readme-stats activity graph
   const fallbackUrl = `https://github-readme-activity-graph.vercel.app/graph?username=${username}&bg_color=0a0e1a&color=4f8cff&line=00d4ff&point=4f8cff&area=true&hide_border=true&theme=react-dark`;
@@ -180,17 +183,15 @@ export default function GitHubActivity() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [evRes, userRes, repoRes] = await Promise.all([
-          fetch(`https://api.github.com/users/${GITHUB_USERNAME}/events/public?per_page=100`),
-          fetch(`https://api.github.com/users/${GITHUB_USERNAME}`),
-          fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`),
-        ]);
+        // Fetched via the backend proxy to avoid GitHub's unauthenticated
+        // 60 req/hr rate limit on the browser's IP.
+        const res = await fetch(`${API_BASE}/github/activity`);
+        if (!res.ok) throw new Error('GitHub API error');
+        const data = await res.json();
 
-        if (!evRes.ok || !userRes.ok) throw new Error('GitHub API error');
-
-        const evData   = await evRes.json();
-        const userData = await userRes.json();
-        const repoData = repoRes.ok ? await repoRes.json() : [];
+        const evData   = data.events || [];
+        const userData = data.user   || {};
+        const repoData = data.repos  || [];
 
         setEvents(Array.isArray(evData) ? evData : []);
         setStats({

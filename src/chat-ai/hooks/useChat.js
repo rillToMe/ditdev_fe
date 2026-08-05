@@ -33,8 +33,33 @@ const SECTIONS = [
   { id: 'contact',      hint: 'The Contact Portal. Ready to begin a new quest together? 🌐' },
 ];
 
+const STORAGE_KEY = 'changli_chat_messages';
+
 export function useChat() {
-  const [messages,     setMessages]     = useState([OPENING_MESSAGE]);
+  // Context memory: restore the conversation from localStorage so the AI doesn't
+  // forget previous exchanges after a reload (same browser).
+  const savedRef = useRef(null);
+  if (savedRef.current === null) {
+    savedRef.current = (() => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return [];
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch { /* corrupted or blocked storage */ return []; }
+    })();
+  }
+  const savedMessages = savedRef.current;
+
+  // Continue ids past the restored messages so React keys stay unique.
+  const idRef = useRef(savedMessages.length
+    ? Math.max(0, ...savedMessages.map(m => (typeof m.id === 'number' ? m.id : 0)))
+    : 0);
+  const nextId = () => ++idRef.current;
+
+  const [messages,     setMessages]     = useState(() =>
+    savedMessages.length ? savedMessages : [{ ...OPENING_MESSAGE, id: nextId() }]
+  );
   const [input,        setInput]        = useState('');
   const [isLoading,    setIsLoading]    = useState(false);
   const [isOpen,       setIsOpen]       = useState(false);
@@ -42,6 +67,11 @@ export function useChat() {
   const lastSectionRef    = useRef('');
   const currentSectionRef  = useRef('');
   const hintTimerRef   = useRef(null);
+
+  // Persist the conversation on every change.
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(messages)); } catch { /* ignore */ }
+  }, [messages]);
 
   // ── Scroll awareness ──────────────────────────────────
   useEffect(() => {
@@ -87,7 +117,7 @@ export function useChat() {
     setInput('');
     setSectionHint(null);
 
-    const userMsg  = { role: 'user', content };
+    const userMsg  = { id: nextId(), role: 'user', content };
     const newMsgs  = [...messages, userMsg];
     setMessages(newMsgs);
     setIsLoading(true);
@@ -97,11 +127,12 @@ export function useChat() {
       const history = newMsgs.filter(m => m.role !== 'system');
       const reply   = await sendChatMessage(history, currentSectionRef.current || '');
 
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
+      setMessages(prev => [...prev, { id: nextId(), role: 'assistant', content: reply }]);
     } catch (err) {
       setMessages(prev => [
         ...prev,
         {
+          id     : nextId(),
           role   : 'assistant',
           content: `A disturbance in the realm...\n\n${err.message}\n\nTry again, traveler.`,
         },
@@ -119,6 +150,15 @@ export function useChat() {
     { label: '📬 Contact',      text: 'How can I contact Rahmat?' },
   ];
 
+  // Start a fresh conversation: clear the in-memory messages; the persist effect
+  // rewrites localStorage with just the opening message, so memory resets too.
+  const resetChat = useCallback(() => {
+    setMessages([{ ...OPENING_MESSAGE, id: nextId() }]);
+    setInput('');
+    setSectionHint(null);
+    setIsLoading(false);
+  }, []);
+
   return {
     messages,
     input,
@@ -130,5 +170,6 @@ export function useChat() {
     sectionHint,
     setSectionHint,
     quickPrompts,
+    resetChat,
   };
 }

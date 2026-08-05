@@ -117,17 +117,16 @@ export default function ProjectModal({ project, onClose, onSuccess }) {
     }
   };
 
+  // Best-effort R2 cleanup for an upload that is no longer referenced.
+  // Skips the project's original thumbnail — the backend deletes that on save.
+  const dropUpload = async (url) => {
+    if (!url || url === (project?.thumbnail || '')) return;
+    try { await api.deleteImage(url.split('/').pop(), 'projects'); } catch { /* ignore */ }
+  };
+
   // Confirmed discard — delete uploaded file from R2 if new (not pre-existing)
   const handleConfirmDiscard = async () => {
-    const isNewUpload = formData.thumbnail && formData.thumbnail !== (project?.thumbnail || '');
-    if (isNewUpload && !isEditing) {
-      // Best-effort delete — fire and forget
-      try {
-        const url   = formData.thumbnail;
-        const fname = url.split('/').pop();
-        await api.deleteImage(fname, 'projects');
-      } catch { /* ignore */ }
-    }
+    await dropUpload(formData.thumbnail);
     setShowDiscard(false);
     onClose();
   };
@@ -147,7 +146,9 @@ export default function ProjectModal({ project, onClose, onSuccess }) {
     try {
       const croppedFile = new File([croppedBlob], selectedFile.name, { type: 'image/jpeg' });
       const data = await api.uploadImage(croppedFile, 'projects');
+      const replaced = formData.thumbnail;
       setFormData(prev => ({ ...prev, thumbnail: data.data.path }));
+      await dropUpload(replaced);
     } catch (err) {
       alert('Upload failed: ' + err.message);
     } finally {
@@ -320,7 +321,7 @@ export default function ProjectModal({ project, onClose, onSuccess }) {
                       <span className="font-pixel text-[10px] text-white/80 tracking-widest">PREVIEW</span>
                       <button
                         type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, thumbnail: '' }))}
+                        onClick={() => { dropUpload(formData.thumbnail); setFormData(prev => ({ ...prev, thumbnail: '' })); }}
                         className="p-1.5 bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/40 transition"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

@@ -6,6 +6,7 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api';
 /**
  * Send chat messages to CHANGLI-AI
  * @param {Array<{role: string, content: string}>} messages
+ * @param {string} currentSection
  * @returns {Promise<string>} AI reply text
  */
 export async function sendChatMessage(messages, currentSection = '') {
