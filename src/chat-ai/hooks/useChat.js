@@ -4,10 +4,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { sendChatMessage } from '../services/chatService';
 
-// Opening message dari CHANGLI-AI
+// Opening message dari CHANGLI-AI. Rendered through MarkdownRenderer, so this is
+// Markdown too - plain "•" would show up as a literal character.
 const OPENING_MESSAGE = {
   role   : 'assistant',
-  content: `🟢 CHANGLI-AI ONLINE
+  content: `🟢 **CHANGLI-AI ONLINE**
 
 Welcome, traveler.
 
@@ -15,10 +16,11 @@ You've entered Rahmat Aditya's digital realm.
 I'm CHANGLI-AI, your guide through this world.
 
 You may ask me about his:
-• Projects & quests
-• Skills & tech stack
-• Achievements & certificates
-• Experience & contact
+
+- Projects & quests
+- Skills & tech stack
+- Achievements & certificates
+- Experience & contact
 
 Or simply explore the realm yourself.`,
 };
@@ -34,6 +36,11 @@ const SECTIONS = [
 ];
 
 const STORAGE_KEY = 'changli_chat_messages';
+
+// The backend only reads the last 20 turns (`messages.slice(-20)` there), so
+// keeping more than that grows localStorage and the request body without ever
+// reaching the model.
+const MAX_HISTORY = 20;
 
 export function useChat() {
   // Context memory: restore the conversation from localStorage so the AI doesn't
@@ -68,9 +75,11 @@ export function useChat() {
   const currentSectionRef  = useRef('');
   const hintTimerRef   = useRef(null);
 
-  // Persist the conversation on every change.
+  // Persist the conversation on every change, trimmed to what the backend reads.
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(messages)); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-MAX_HISTORY)));
+    } catch { /* ignore */ }
   }, [messages]);
 
   // ── Scroll awareness ──────────────────────────────────
@@ -150,9 +159,12 @@ export function useChat() {
     { label: '📬 Contact',      text: 'How can I contact Rahmat?' },
   ];
 
-  // Start a fresh conversation: clear the in-memory messages; the persist effect
-  // rewrites localStorage with just the opening message, so memory resets too.
+  // Start a fresh conversation. localStorage is cleared straight away rather than
+  // left to the persist effect: if the stored history is ever unusable (a turn the
+  // backend rejects), waiting for a re-render to overwrite it means one more failed
+  // request first.
   const resetChat = useCallback(() => {
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
     setMessages([{ ...OPENING_MESSAGE, id: nextId() }]);
     setInput('');
     setSectionHint(null);

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, FolderOpen, Award, Sun, Moon, Monitor, UserPlus, TrendingUp, RefreshCw } from 'lucide-react';
+import { LogOut, FolderOpen, Award, Sun, Moon, Monitor, UserPlus, TrendingUp, RefreshCw, Database } from 'lucide-react';
 import { Menu } from '@headlessui/react';
 import api from '../services/api';
 import { useTheme } from '../contexts/ThemeContext';
 import ProjectsManager     from '../components/ProjectsManager';
 import CertificatesManager from '../components/CertificatesManager';
 import StatsManager        from '../components/StatsManager';
+import RagManager          from '../components/RagManager';
 import RegisterAdmin       from '../components/RegisterAdmin';
 
 const pixelClip = 'polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%)';
@@ -267,6 +268,7 @@ export default function Dashboard({ admin, onLogout }) {
             <TabBtn active={activeTab === 'projects'}     onClick={() => setActiveTab('projects')}     icon={FolderOpen}  label="PROJECTS"     />
             <TabBtn active={activeTab === 'certificates'} onClick={() => setActiveTab('certificates')} icon={Award}       label="CERTIFICATES" />
             <TabBtn active={activeTab === 'stats'}        onClick={() => setActiveTab('stats')}        icon={TrendingUp}  label="STATS"        />
+            <TabBtn active={activeTab === 'rag'}          onClick={() => setActiveTab('rag')}          icon={Database}    label="RAG"          />
           </div>
 
           {/* Tab content */}
@@ -294,6 +296,7 @@ export default function Dashboard({ admin, onLogout }) {
                   {activeTab === 'projects'     && <ProjectsManager     projects={projects}         onUpdate={loadData} />}
                   {activeTab === 'certificates' && <CertificatesManager certificates={certificates} onUpdate={loadData} />}
                   {activeTab === 'stats'        && <StatsManager        stats={stats}               onUpdate={loadData} />}
+                  {activeTab === 'rag'          && <RagManager />}
                 </motion.div>
               </AnimatePresence>
             )}

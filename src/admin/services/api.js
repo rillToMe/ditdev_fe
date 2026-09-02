@@ -189,6 +189,17 @@ async uploadPDF(file) {
       method: 'DELETE',
     });
   },
+
+  // RAG index
+  getRagStatus() {
+    return this.request('/rag/status');
+  },
+
+  rebuildRag() {
+    return this.request('/rag/rebuild', {
+      method: 'POST',
+    });
+  },
 };
 
 export default api;
