@@ -164,7 +164,7 @@ export default function Hero({ play = true }: { play?: boolean }) {
         {/* Name plate */}
         <motion.div variants={assemble}>
           <p className="font-mono text-pixel-cyan/80 text-xs tracking-[0.35em] mb-4">
-            {'// '}{SITE.player}
+            {'// '}{SITE.owner}
           </p>
           <h1 className="font-pixel leading-[1.35] mb-3">
             <span className="block text-3xl sm:text-5xl lg:text-6xl text-pixel-white">

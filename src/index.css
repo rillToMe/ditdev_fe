@@ -676,10 +676,13 @@
 }
 .chat-caret { animation: chatCaret 0.85s step-end infinite; }
 
-/* Slim, cyan-on-dark scrollbar for the message log. */
+/* Slim, cyan-on-dark scrollbar for the message log. `overscroll-behavior`
+   keeps the wheel/touch gesture from chaining out to the page behind the
+   panel once the log hits either end. */
 .chat-scroll {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 212, 255, 0.35) transparent;
+  overscroll-behavior: contain;
 }
 .chat-scroll::-webkit-scrollbar { width: 6px; }
 .chat-scroll::-webkit-scrollbar-track { background: rgba(79, 140, 255, 0.05); }
@@ -689,6 +692,27 @@
 .chat-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 212, 255, 0.5);
 }
+
+/* ── Game loading screen ──────────────────────────────────────────────
+   Decorative only; all three are neutralised by the reduced-motion block
+   at the end of this file (duration → 0.001ms, single iteration). */
+@keyframes loadShimmer {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+.load-shimmer { animation: loadShimmer 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+
+@keyframes loadSpark {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(7px, -28px) scale(0.2); opacity: 0; }
+}
+.load-spark { animation: loadSpark 1.1s ease-out infinite; }
+
+@keyframes loadBlink {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.load-cursor { animation: loadBlink 1s step-end infinite; }
 
 /* ── Route transition curtain ─────────────────────────────────────────
    A pixel scan bar that sweeps top→bottom over the incoming page on every

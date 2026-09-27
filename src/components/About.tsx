@@ -125,7 +125,7 @@ export default function About() {
           title="Character"
           accent="Sheet"
           icon="shield"
-          subtitle="Player profile, attributes and equipped inventory."
+          subtitle="Owner profile, attributes and equipped inventory."
         />
 
         <div className="grid md:grid-cols-2 gap-12 items-start">

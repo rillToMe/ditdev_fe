@@ -6,7 +6,10 @@ export const SITE = {
   firstName: 'Rahmat',
   lastName: 'Aditya',
   handle: '@adit',
-  player: 'PLAYER_1',
+  /** Rahmat owns the realm; he is not the one playing it. */
+  owner: 'WORLD_OWNER',
+  /** The visitor who enters the realm and earns XP/MAP progress. */
+  traveler: 'TRAVELER',
   role: 'Game Developer & Web Developer',
   shortRole: 'Game Dev · Web Dev',
   location: 'Sumatera Barat, Indonesia',
@@ -17,14 +20,14 @@ export const SITE = {
 } as const
 
 export const NAV_ITEMS = [
-  { id: 'home',         label: 'Home',         index: '01' },
-  { id: 'about',        label: 'About',        index: '02' },
-  { id: 'projects',     label: 'Projects',     index: '03' },
-  { id: 'certificates', label: 'Certificates', index: '04' },
-  { id: 'skills',       label: 'Skills',       index: '05' },
-  { id: 'education',    label: 'Quest Log',    index: '06' },
-  { id: 'github',       label: 'Activity',     index: '07' },
-  { id: 'contact',      label: 'Contact',      index: '08' },
+  { id: 'home',         label: 'Home',         index: '01', icon: 'home'     },
+  { id: 'about',        label: 'About',        index: '02', icon: 'user'     },
+  { id: 'projects',     label: 'Projects',     index: '03', icon: 'gamepad'  },
+  { id: 'certificates', label: 'Certificates', index: '04', icon: 'trophy'   },
+  { id: 'skills',       label: 'Skills',       index: '05', icon: 'star'     },
+  { id: 'education',    label: 'Quest Log',    index: '06', icon: 'book'     },
+  { id: 'github',       label: 'Activity',     index: '07', icon: 'chart'    },
+  { id: 'contact',      label: 'Contact',      index: '08', icon: 'mail'     },
 ] as const
 
 export type SectionId = (typeof NAV_ITEMS)[number]['id']

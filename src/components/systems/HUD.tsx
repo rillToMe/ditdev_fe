@@ -26,11 +26,10 @@ export default function HUD({ onOpenConsole }: HUDProps) {
           className="pointer-events-auto flex items-center gap-2 sm:gap-4 h-8 px-3 sm:px-4 border border-pixel-blue/15 border-t-0 bg-bg-primary/85 backdrop-blur-md"
           style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 10px 100%, 0 calc(100% - 6px))' }}
         >
-          {/* Player chip */}
+          {/* Traveler chip — the visitor whose XP/MAP/badges this bar tracks */}
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="w-1.5 h-1.5 bg-green-400 animate-pulse" />
-            <span className="font-pixel text-[8px] text-pixel-white/90 hidden sm:inline">{SITE.player}</span>
-            <span className="font-mono text-[10px] text-pixel-blue/80">{SITE.handle}</span>
+            <span className="font-pixel text-[8px] text-pixel-white/90">{SITE.traveler}</span>
           </div>
 
           <span className="w-px h-4 bg-pixel-blue/15 hidden sm:block" />

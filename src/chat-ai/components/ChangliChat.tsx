@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { FiX, FiSend, FiZap, FiEdit, FiCopy, FiCheck, FiCornerDownLeft } from 'react-icons/fi'
 import { useChat } from '../hooks/useChat'
 import { useAchievements } from '../../components/systems/AchievementsProvider'
+import { SITE } from '../../data/site'
 import type { ChatMessage } from '../../types/api'
 
 const MarkdownRenderer = lazy(() => import('./MarkdownRenderer'))
@@ -158,7 +159,7 @@ function MessageBubble({
         className="flex flex-col items-end gap-1"
       >
         <div className="flex items-center gap-1.5 pr-0.5">
-          <span className="font-mono text-[8px] text-pixel-gray/35 tracking-widest">TRAVELER</span>
+          <span className="font-mono text-[8px] text-pixel-gray/35 tracking-widest">{SITE.traveler}</span>
           <span className="font-mono text-[8px] text-pixel-blue/40">#{seq}</span>
         </div>
         <div
@@ -305,6 +306,49 @@ export default function ChangliChat() {
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLInputElement>(null)
+  const panelRef  = useRef<HTMLDivElement>(null)
+
+  // Contain scroll inside the panel. `overscroll-behavior: contain` on the
+  // message log covers the case where the log is at either end, but a wheel
+  // over the header, input or quick prompts has no scroller to absorb it and
+  // would chain straight through to the page behind. Block it explicitly:
+  // only let the gesture through when it lands on something that can actually
+  // scroll in that direction.
+  useEffect(() => {
+    const panel = panelRef.current
+    if (!panel || !isOpen) return
+
+    const onWheel = (e: WheelEvent) => {
+      let el = e.target as HTMLElement | null
+      while (el && el !== panel) {
+        if (el.scrollHeight > el.clientHeight) {
+          const atTop    = el.scrollTop <= 0
+          const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1
+          if ((e.deltaY < 0 && atTop) || (e.deltaY > 0 && atBottom)) e.preventDefault()
+          return
+        }
+        el = el.parentElement
+      }
+      // No scrollable ancestor inside the panel — swallow the gesture.
+      e.preventDefault()
+    }
+
+    const onTouchMove = (e: TouchEvent) => {
+      let el = e.target as HTMLElement | null
+      while (el && el !== panel) {
+        if (el.scrollHeight > el.clientHeight) return
+        el = el.parentElement
+      }
+      e.preventDefault()
+    }
+
+    panel.addEventListener('wheel', onWheel, { passive: false })
+    panel.addEventListener('touchmove', onTouchMove, { passive: false })
+    return () => {
+      panel.removeEventListener('wheel', onWheel)
+      panel.removeEventListener('touchmove', onTouchMove)
+    }
+  }, [isOpen])
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -430,6 +474,7 @@ export default function ChangliChat() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            ref={panelRef}
             initial={{ opacity: 0, scale: 0.92, y: 20, originX: 1, originY: 1 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 20 }}

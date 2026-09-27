@@ -197,8 +197,8 @@ export default function Contact() {
             </motion.div>
 
             {[
-              { name: 'name',  label: 'Your Name',     placeholder: 'Player One',       type: 'text'  },
-              { name: 'email', label: 'Email Address', placeholder: 'player@guild.com', type: 'email' },
+              { name: 'name',  label: 'Your Name',     placeholder: 'Traveler',         type: 'text'  },
+              { name: 'email', label: 'Email Address', placeholder: 'traveler@guild.com', type: 'email' },
             ].map(({ name, label, placeholder, type }) => (
               <motion.div key={name} variants={assemble}>
                 <label className="block font-mono text-pixel-gray/50 text-xs mb-1.5">

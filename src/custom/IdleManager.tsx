@@ -227,8 +227,7 @@ function AFKOverlay({ isIdle, isLongIdle, onWake, konamiActive }: AFKOverlayProp
           {/* Top status strip — echoes the persistent HUD */}
           <div className="absolute top-0 inset-x-0 h-9 flex items-center gap-3 px-4 sm:px-6 border-b border-pixel-blue/15 bg-black/40 backdrop-blur-sm">
             <span className="w-1.5 h-1.5 bg-green-400 animate-pulse" />
-            <span className="font-pixel text-[8px] text-pixel-white/90">{SITE.player}</span>
-            <span className="font-mono text-[10px] text-pixel-blue/80">{SITE.handle}</span>
+            <span className="font-pixel text-[8px] text-pixel-white/90">{SITE.traveler}</span>
             <span className="hidden sm:block w-px h-4 bg-pixel-blue/15" />
             <span className="font-pixel text-[8px] text-pixel-cyan tracking-widest">AFK MODE</span>
             <span className="ml-auto font-mono text-[10px] text-pixel-gray/40">{SITE.version}</span>
