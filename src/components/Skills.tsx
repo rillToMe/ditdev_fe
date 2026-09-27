@@ -246,6 +246,9 @@ export default function Skills() {
   const timeRef      = useRef(0)
   // cached, pre-blurred Milky Way band — rebuilt only when the canvas resizes
   const galaxyRef    = useRef<{ w: number; h: number; canvas: HTMLCanvasElement } | null>(null)
+  // Cached canvas box for pointer hit-testing; measuring it on every mousemove
+  // forced a layout flush.
+  const rectRef      = useRef<{ left: number; top: number; width: number; height: number } | null>(null)
 
   const [activeCategory, setActiveCategory] = useState('all')
   const [hoveredSkill,   setHoveredSkill]   = useState<string | null>(null)
@@ -480,17 +483,32 @@ export default function Skills() {
       const { width } = entries[0].contentRect
       const h = Math.min(Math.max(width * 0.56, 300), 520)
       setCanvasSize({ w: Math.floor(width), h: Math.floor(h) })
+      // The canvas box moved — drop the cached pointer rect so the next
+      // mousemove re-measures it.
+      rectRef.current = null
     })
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
 
+  // Cache the canvas box; measuring it on every mousemove forced a layout.
+  useEffect(() => {
+    const invalidate = () => { rectRef.current = null }
+    window.addEventListener('scroll', invalidate, { passive: true })
+    return () => window.removeEventListener('scroll', invalidate)
+  }, [])
+
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const rect = canvas.getBoundingClientRect()
-    const mx   = (e.clientX - rect.left) * (canvasSize.w / rect.width)
-    const my   = (e.clientY - rect.top)  * (canvasSize.h / rect.height)
+    let r = rectRef.current
+    if (!r) {
+      const b = canvas.getBoundingClientRect()
+      if (!b.width || !b.height) return
+      r = rectRef.current = { left: b.left, top: b.top, width: b.width, height: b.height }
+    }
+    const mx   = (e.clientX - r.left) * (canvasSize.w / r.width)
+    const my   = (e.clientY - r.top)  * (canvasSize.h / r.height)
     let found: string | null = null
     let minD = Infinity
     SKILLS.forEach(skill => {

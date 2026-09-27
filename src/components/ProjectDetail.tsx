@@ -487,7 +487,7 @@ export default function ProjectDetail() {
             </div>
             <div className="relative" style={{ aspectRatio: '16 / 9' }}>
               {hero ? (
-                <img src={hero} alt={project.title} className="w-full h-full object-cover" loading="lazy" />
+                <img src={hero} alt={project.title} className="w-full h-full object-cover" decoding="async" fetchPriority="high" />
               ) : (
                 <div className="absolute inset-0 grid-overlay flex items-center justify-center">
                   <div className="text-center">

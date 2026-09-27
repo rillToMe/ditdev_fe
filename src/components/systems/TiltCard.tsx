@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import type { Variants } from 'framer-motion'
@@ -69,20 +69,51 @@ export default function TiltCard({
     ([x, y]) => `radial-gradient(240px circle at ${x} ${y}, rgba(0,212,255,0.16), transparent 62%)`,
   )
 
-  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  // Cache the card's box on enter instead of measuring on every mousemove —
+  // a layout read per pointer move is a forced-reflow source.
+  const rectRef = useRef<{ left: number; top: number; width: number; height: number } | null>(null)
+
+  const handleEnter = (e: React.MouseEvent<HTMLDivElement>) => {
     const el = ref.current
     if (!el) return
-    const rect = el.getBoundingClientRect()
-    px.set((e.clientX - rect.left) / rect.width - 0.5)
-    py.set((e.clientY - rect.top) / rect.height - 0.5)
+    const r = el.getBoundingClientRect()
+    rectRef.current = { left: r.left, top: r.top, width: r.width, height: r.height }
+    handleMove(e)
+  }
+
+  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    let r = rectRef.current
+    if (!r) {
+      const el = ref.current
+      if (!el) return
+      const b = el.getBoundingClientRect()
+      r = rectRef.current = { left: b.left, top: b.top, width: b.width, height: b.height }
+    }
+    if (!r.width || !r.height) return
+    px.set((e.clientX - r.left) / r.width - 0.5)
+    py.set((e.clientY - r.top) / r.height - 0.5)
     sheenOpacity.set(1)
   }
 
   const reset = () => {
+    rectRef.current = null
     px.set(0)
     py.set(0)
     sheenOpacity.set(0)
   }
+
+  // A scroll or resize moves the card under the pointer, so the cached box
+  // must be dropped; the next mousemove re-measures it.
+  useEffect(() => {
+    if (reduced) return
+    const invalidate = () => { rectRef.current = null }
+    window.addEventListener('scroll', invalidate, { passive: true })
+    window.addEventListener('resize', invalidate, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', invalidate)
+      window.removeEventListener('resize', invalidate)
+    }
+  }, [reduced])
 
   if (reduced) {
     return (
@@ -104,6 +135,7 @@ export default function TiltCard({
   return (
     <motion.div
       ref={ref}
+      onMouseEnter={handleEnter}
       onMouseMove={handleMove}
       onMouseLeave={reset}
       onClick={onClick}

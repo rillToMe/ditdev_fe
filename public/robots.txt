@@ -1,0 +1,33 @@
+# robots.txt — https://ditdev.kyuzenstudio.com
+# Portfolio of Rahmat Aditya (Game Developer & Web Developer)
+
+# Allow crawling of the whole site by default.
+User-agent: *
+Allow: /
+
+# Keep the admin dashboard and the JSON API out of search results.
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+
+# AI / LLM training crawlers — opt out (not affiliated with this site).
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /

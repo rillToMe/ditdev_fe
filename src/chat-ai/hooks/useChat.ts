@@ -84,13 +84,26 @@ export function useChat() {
 
   // ── Scroll awareness ──────────────────────────────────
   useEffect(() => {
-    const handleScroll = () => {
+    // Cache each section's top once instead of reading `offsetTop` on every
+    // scroll event (that per-tick layout read was a forced-reflow source).
+    let tops: { id: string; top: number }[] = []
+    const measure = () => {
+      tops = SECTIONS
+        .map(s => {
+          const el = document.getElementById(s.id)
+          return el ? { id: s.id, top: el.offsetTop } : null
+        })
+        .filter((t): t is { id: string; top: number } => t !== null)
+    }
+
+    let raf = 0
+    const update = () => {
+      raf = 0
       const scrollY = window.scrollY + window.innerHeight / 2
 
       let current = ''
-      for (const section of SECTIONS) {
-        const el = document.getElementById(section.id)
-        if (el && el.offsetTop <= scrollY) current = section.id
+      for (const t of tops) {
+        if (t.top <= scrollY) current = t.id
       }
 
       if (current && current !== lastSectionRef.current) {
@@ -111,9 +124,17 @@ export function useChat() {
       }
     }
 
+    const handleScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update)
+    }
+
+    measure()
     window.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('resize', measure, { passive: true })
     return () => {
+      if (raf) cancelAnimationFrame(raf)
       window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('resize', measure)
       if (hintTimerRef.current) clearTimeout(hintTimerRef.current)
     }
   }, [messages.length])

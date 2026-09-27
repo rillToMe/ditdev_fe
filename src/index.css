@@ -1,5 +1,48 @@
 @import "tailwindcss";
 
+/* Self-hosted webfonts. This replaces a render-blocking
+   fonts.googleapis.com stylesheet (an extra DNS + TLS + request chain that
+   Lighthouse flagged as 240 ms of render-blocking time and a network-tree
+   dependency). Latin subset, woff2 only — every browser that runs this site
+   supports woff2, so the .woff fallbacks @fontsource ships are dead weight.
+   Files live in public/fonts/ (stable URLs, so they can be preloaded in
+   index.html and get an immutable cache header). */
+@font-face {
+  font-family: 'Press Start 2P';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url('/fonts/press-start-2p-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url('/fonts/jetbrains-mono-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url('/fonts/jetbrains-mono-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url('/fonts/jetbrains-mono-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url('/fonts/jetbrains-mono-700.woff2') format('woff2');
+}
+
 @theme {
   /* fontFamily — two fonts only: Press Start 2P for display/HUD,
      JetBrains Mono for everything else. */

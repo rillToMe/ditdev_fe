@@ -11,12 +11,11 @@
       content="Rahmat Aditya - Game Developer & Web Developer from Sumatera Barat, Indonesia. Building projects with Unity, Godot, React, and modern web technologies."
     />
     <meta name="theme-color" content="#0a0e1a" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <!-- Self-hosted fonts (src/index.css). Preload the two faces the hero
+         paints with so text isn't swapped in late. No third-party stylesheet,
+         so nothing here blocks rendering. -->
+    <link rel="preload" href="/fonts/press-start-2p-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin />
 
     <meta property="og:title" content="Rahmat Aditya | Game Developer & Web Developer" />
     <meta property="og:description" content="Game Developer from Sumatera Barat. Building worlds with Unity, Godot & React." />

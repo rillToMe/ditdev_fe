@@ -50,7 +50,7 @@ function CertCard({ cert, index, onClick }: { cert: Certificate; index: number; 
           <div className="absolute inset-1.5 border border-yellow-400/15 pointer-events-none z-10" />
 
           {cert.thumbnail ? (
-            <img src={cert.thumbnail} alt="" className="w-full h-full object-cover" />
+            <img src={cert.thumbnail} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center gap-2">
               <PixelIcon name="certificate" size={26} className="text-yellow-400/60" />
@@ -144,7 +144,7 @@ function CertModal({ cert, onClose }: { cert: Certificate; onClose: () => void }
           <div className="relative bg-bg-primary">
             {cert.thumbnail ? (
               <div className="relative" style={{ aspectRatio: '16 / 9' }}>
-                <img src={cert.thumbnail} alt={cert.title} className="w-full h-full object-cover" />
+                <img src={cert.thumbnail} alt={cert.title} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 <div className="absolute inset-1.5 border border-yellow-400/12 pointer-events-none" />
                 <CornerBrackets className="border-pixel-cyan/45" />
               </div>

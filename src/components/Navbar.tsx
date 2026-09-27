@@ -20,22 +20,55 @@ export default function Navbar() {
   const reduced = useReducedMotion()
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 40)
+    // Section offsets are read from the layout only when they can actually
+    // change (mount / resize), never inside the scroll handler. Reading
+    // `offsetTop` per item on every scroll tick forces the browser to flush
+    // pending style+layout — that was the "Forced reflow" insight.
+    const ids = NAV_ITEMS.map(i => i.id)
+    let tops: { id: SectionId; top: number }[] = []
 
-      const ids = NAV_ITEMS.map(i => i.id)
-      for (let i = ids.length - 1; i >= 0; i--) {
-        const el = document.getElementById(ids[i])
-        if (el && window.scrollY >= el.offsetTop - 140) {
-          setActive(ids[i])
+    const measure = () => {
+      tops = ids
+        .map(id => {
+          const el = document.getElementById(id)
+          return el ? { id, top: el.offsetTop } : null
+        })
+        .filter((t): t is { id: SectionId; top: number } => t !== null)
+    }
+
+    // Coalesce bursts of scroll events into one layout pass per frame.
+    let raf = 0
+    const update = () => {
+      raf = 0
+      const y = window.scrollY
+      setScrolled(y > 40)
+      for (let i = tops.length - 1; i >= 0; i--) {
+        if (y >= tops[i].top - 140) {
+          setActive(tops[i].id)
           break
         }
       }
     }
 
+    const handleScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update)
+    }
+
+    const handleResize = () => {
+      measure()
+      if (!raf) raf = requestAnimationFrame(update)
+    }
+
+    measure()
+    update()
+
     window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll()
-    return () => window.removeEventListener('scroll', handleScroll)
+    window.addEventListener('resize', handleResize, { passive: true })
+    return () => {
+      if (raf) cancelAnimationFrame(raf)
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('resize', handleResize)
+    }
   }, [])
 
   const handleNav = (id: string) => {

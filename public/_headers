@@ -1,0 +1,37 @@
+# Cloudflare Pages / Netlify header rules.
+# Vite copies this file verbatim to the site root, where both platforms read it.
+#
+# NOTE: the current production origin is nginx behind Cloudflare, which does NOT
+# read this file — see deploy/nginx.conf for the equivalent server config. Keep
+# both in sync.
+
+# -- Content-hashed build output: cache forever -------------------------
+# Filenames carry a content hash, so a new build always produces a new URL.
+# Without this, the origin sent no Cache-Control and Cloudflare applied its
+# default 4h browser TTL, so repeat visits re-downloaded ~1.5 MB of unchanged
+# JS/CSS/fonts.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# -- Static media in the public root: revalidate, don't cache blind -----
+/*.png
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/*.jpg
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/*.jpeg
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/*.svg
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/*.ico
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/*.pdf
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+# -- HTML shell + crawler files: always revalidate ----------------------
+# index.html points at the hashed bundles, so it must never go stale.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+/robots.txt
+  Cache-Control: public, max-age=0, must-revalidate
