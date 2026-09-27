@@ -91,7 +91,24 @@ function CertCard({ cert, index, onClick }: { cert: Certificate; index: number; 
   )
 }
 
+/** Grounded HUD corner brackets — crisp L-marks, no glow. */
+function CornerBrackets({ className = 'border-pixel-cyan/50' }: { className?: string }) {
+  const c = `absolute w-3 h-3 pointer-events-none z-10 ${className}`
+  return (
+    <>
+      <span className={`${c} top-2 left-2 border-t border-l`} />
+      <span className={`${c} top-2 right-2 border-t border-r`} />
+      <span className={`${c} bottom-2 left-2 border-b border-l`} />
+      <span className={`${c} bottom-2 right-2 border-b border-r`} />
+    </>
+  )
+}
+
 function CertModal({ cert, onClose }: { cert: Certificate; onClose: () => void }) {
+  const date = formatDate(cert.issue_date)
+  const recordId = `CERT-${String(cert.id).padStart(3, '0')}`
+  const hasActions = !!cert.pdf_file || !!cert.credential_url
+
   return (
     <AnimatePresence>
       <motion.div
@@ -102,55 +119,64 @@ function CertModal({ cert, onClose }: { cert: Certificate; onClose: () => void }
         onClick={onClose}
       >
         <motion.div
-          initial={{ scale: 0.9, opacity: 0, y: 12 }}
+          initial={{ scale: 0.95, opacity: 0, y: 10 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.9, opacity: 0 }}
+          exit={{ scale: 0.95, opacity: 0 }}
           transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
-          className="relative max-w-lg w-full bg-bg-secondary border border-yellow-400/25 overflow-hidden"
-          style={{ clipPath: 'polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))' }}
+          className="relative max-w-md w-full max-h-[90vh] overflow-y-auto bg-bg-secondary border border-yellow-400/20"
+          style={{ clipPath: 'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))' }}
           onClick={e => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between px-6 py-4 border-b border-pixel-blue/10">
-            <div className="flex items-center gap-2">
-              <PixelIcon name="certificate" size={14} className="text-yellow-400" />
-              <span className="font-pixel text-[9px] text-yellow-400 tracking-widest">CREDENTIAL DETAIL</span>
-            </div>
-            <button onClick={onClose} className="text-pixel-gray hover:text-pixel-white transition-colors p-1" aria-label="Close">
-              <FiX />
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 z-30 p-1.5 text-pixel-gray bg-bg-primary/70 border border-white/10 hover:text-pixel-white hover:border-white/25 transition-colors"
+            aria-label="Close"
+          >
+            <FiX size={15} />
+          </button>
 
-          {cert.thumbnail && (
-            <div className="h-48 overflow-hidden bg-bg-primary">
-              <img src={cert.thumbnail} alt={cert.title} className="w-full h-full object-cover" />
-            </div>
-          )}
-
-          <div className="p-6 space-y-4">
-            <div>
-              <h3 className="font-pixel text-pixel-white text-sm leading-relaxed mb-2">{cert.title}</h3>
-              <p className="font-mono text-pixel-blue text-sm">{cert.provider}</p>
-            </div>
-
-            {cert.issue_date && (
-              <div className="flex items-center gap-2 font-mono text-xs text-pixel-gray/60">
-                <FiCalendar />
-                <span>Issued {new Date(cert.issue_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+          {/* Seal viewer */}
+          <div className="relative bg-bg-primary">
+            {cert.thumbnail ? (
+              <div className="relative" style={{ aspectRatio: '16 / 9' }}>
+                <img src={cert.thumbnail} alt={cert.title} className="w-full h-full object-cover" />
+                <div className="absolute inset-1.5 border border-yellow-400/12 pointer-events-none" />
+                <CornerBrackets className="border-pixel-cyan/45" />
+              </div>
+            ) : (
+              <div className="relative h-44 grid-overlay flex flex-col items-center justify-center gap-2">
+                <PixelIcon name="certificate" size={28} className="text-yellow-400/40" />
+                <span className="font-pixel text-[7px] tracking-widest text-yellow-400/35">NO SEAL IMAGE</span>
               </div>
             )}
+          </div>
 
-            <div className="flex flex-wrap gap-3 pt-2">
-              {cert.pdf_file && (
-                <PixelButton variant="gold" icon="scroll" href={cert.pdf_file}>
-                  VIEW PDF
-                </PixelButton>
-              )}
-              {cert.credential_url && (
-                <PixelButton variant="ghost" icon="external" href={cert.credential_url}>
-                  VERIFY
-                </PixelButton>
-              )}
-            </div>
+          <div className="p-6">
+            <p className="font-mono text-[11px] tracking-[0.2em] text-pixel-gray/50 mb-3">{recordId}</p>
+            <h3 className="font-pixel text-xs leading-relaxed text-pixel-white mb-3">{cert.title}</h3>
+            <p className="font-mono text-sm text-pixel-blue">{cert.provider}</p>
+
+            {date && (
+              <p className="flex items-center gap-2 font-mono text-xs text-pixel-gray/70 mt-4 pt-4 border-t border-white/10">
+                <FiCalendar size={12} />
+                Issued {date}
+              </p>
+            )}
+
+            {hasActions && (
+              <div className="flex flex-wrap gap-3 mt-5">
+                {cert.pdf_file && (
+                  <PixelButton variant="gold" icon="scroll" href={cert.pdf_file}>
+                    VIEW PDF
+                  </PixelButton>
+                )}
+                {cert.credential_url && (
+                  <PixelButton variant="ghost" icon="external" href={cert.credential_url}>
+                    VERIFY
+                  </PixelButton>
+                )}
+              </div>
+            )}
           </div>
         </motion.div>
       </motion.div>
