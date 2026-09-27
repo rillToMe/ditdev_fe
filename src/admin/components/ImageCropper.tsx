@@ -6,12 +6,7 @@ import { X, Check, RotateCw, ZoomIn } from 'lucide-react'
 
 const pixelClip = 'polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%)'
 
-const sliderStyle = `
-  .pixel-slider { appearance: none; width: 100%; height: 3px; background: rgba(79,140,255,0.15); cursor: pointer; border: none; }
-  .pixel-slider::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; background: #4f8cff; cursor: pointer; clip-path: polygon(0 0,100% 0,100% 100%,0 100%); box-shadow: 0 0 8px rgba(79,140,255,0.5); }
-  .pixel-slider::-moz-range-thumb { width: 14px; height: 14px; background: #4f8cff; cursor: pointer; border: none; border-radius: 0; box-shadow: 0 0 8px rgba(79,140,255,0.5); }
-  .pixel-slider::-webkit-slider-runnable-track { background: rgba(79,140,255,0.12); }
-`
+// Slider styling now lives in index.css (.pixel-slider).
 
 interface ImageCropperProps {
   image: string
@@ -46,8 +41,6 @@ export default function ImageCropper({ image, onComplete, onCancel, aspectRatio 
       className="fixed inset-0 z-[60] flex flex-col"
       style={{ background: '#050709' }}
     >
-      <style>{sliderStyle}</style>
-
       {/* Header */}
       <div
         className="flex-shrink-0 flex items-center justify-between px-6 py-4"

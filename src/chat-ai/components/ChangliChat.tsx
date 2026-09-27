@@ -2,6 +2,7 @@ import { useEffect, useRef, lazy, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FiX, FiSend, FiZap, FiEdit } from 'react-icons/fi'
 import { useChat } from '../hooks/useChat'
+import { useAchievements } from '../../components/systems/AchievementsProvider'
 import type { ChatMessage } from '../../types/api'
 
 const MarkdownRenderer = lazy(() => import('./MarkdownRenderer'))
@@ -132,6 +133,17 @@ export default function ChangliChat() {
     sectionHint, setSectionHint, quickPrompts,
     resetChat,
   } = useChat()
+
+  const { unlock } = useAchievements()
+  const greeted = useRef(false)
+
+  // Opening the guide and talking to it unlocks NPC FRIEND.
+  useEffect(() => {
+    if (isOpen && !greeted.current) {
+      greeted.current = true
+      unlock('npc_friend')
+    }
+  }, [isOpen, unlock])
 
   const bottomRef  = useRef<HTMLDivElement>(null)
   const inputRef   = useRef<HTMLInputElement>(null)

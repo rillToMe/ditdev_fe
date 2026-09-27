@@ -1,79 +1,62 @@
-import { FiGithub, FiInstagram, FiHeart } from 'react-icons/fi'
+import { useCallback } from 'react'
+import { SiGithub, SiTiktok, SiInstagram } from 'react-icons/si'
+import type { IconType } from 'react-icons'
+import PixelIcon from './systems/PixelIcon'
+import { useAchievements } from './systems/AchievementsProvider'
 import ParallaxBackground from './footer/ParallaxBackground'
 import KnightRunner from './footer/KnightRunner'
-import { SiTiktok } from 'react-icons/si'
+import { SITE, SOCIALS, TECH_MARQUEE, NAV_ITEMS } from '../data/site'
+import type { SocialId } from '../data/site'
+import { useInViewport } from './systems/useInViewport'
 
-const navLinks = [
-  { label: 'Home',         href: '#home' },
-  { label: 'About',        href: '#about' },
-  { label: 'Projects',     href: '#projects' },
-  { label: 'Certificates', href: '#certificates' },
-  { label: 'Skills',       href: '#skills' },
-  { label: 'Contact',      href: '#contact' },
-]
-
-const socials = [
-  { icon: <FiGithub />,    href: 'https://github.com/rillToMe',               label: 'GitHub'    },
-  { icon: <SiTiktok />,     href: 'https://www.tiktok.com/@goodvibes_music28',  label: 'TikTok'    },
-  { icon: <FiInstagram />, href: 'https://www.instagram.com/rill_lyrics/',     label: 'Instagram' },
-]
-
-const techMarquee = [
-  'Unity','Godot','React','C#','Unreal','Blender',
-  'JavaScript','Node.js','GitHub','VS Code','PostgreSQL','HTML/CSS',
-]
+/** Real app/brand icons per social — matches the Contact roster. */
+const SOCIAL_ICON: Record<SocialId, IconType> = {
+  github:    SiGithub,
+  tiktok:    SiTiktok,
+  instagram: SiInstagram,
+}
 
 export default function Footer() {
-  const handleNav = (href: string) => {
-    document.getElementById(href.replace('#', ''))?.scrollIntoView({ behavior: 'smooth' })
+  const { unlock } = useAchievements()
+  const { ref, inView } = useInViewport<HTMLElement>({ rootMargin: '120px' })
+
+  const handleNav = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
   }
 
   const year = new Date().getFullYear()
 
-  return (
-    <footer className="relative border-t border-pixel-blue/10 overflow-hidden">
+  // Poke the knight → hidden achievement.
+  const pokeKnight = useCallback(() => unlock('knight_tap'), [unlock])
 
-      {/*  LAYER 0: Parallax full background  */}
+  return (
+    <footer ref={ref} className="relative border-t border-pixel-blue/10 overflow-hidden">
+      {/* LAYER 0: parallax backdrop (paused off-screen) */}
       <div className="absolute inset-0 z-0">
-        <ParallaxBackground />
+        {inView && <ParallaxBackground />}
       </div>
 
       <div
         className="absolute inset-0 z-10 pointer-events-none"
         style={{
-          background: `
-            linear-gradient(
-              to bottom,
-              rgba(10, 14, 26, 0.93) 0%,
-              rgba(10, 14, 26, 0.88) 40%,
-              rgba(10, 14, 26, 0.55) 68%,
-              rgba(10, 14, 26, 0.15) 85%,
-              rgba(10, 14, 26, 0.0)  100%
-            )
-          `,
+          background: `linear-gradient(
+            to bottom,
+            rgba(10, 14, 26, 0.93) 0%,
+            rgba(10, 14, 26, 0.88) 40%,
+            rgba(10, 14, 26, 0.55) 68%,
+            rgba(10, 14, 26, 0.15) 85%,
+            rgba(10, 14, 26, 0.0) 100%
+          )`,
         }}
       />
 
-      {/* Content footer  */}
       <div className="relative z-20">
-
-        {/* Tech marquee - truly infinite */}
+        {/* Tech marquee */}
         <div className="border-b border-pixel-blue/10 overflow-hidden py-3 bg-bg-primary/30 backdrop-blur-sm">
-          <style>{`
-            @keyframes marquee-infinite {
-              0%   { transform: translateX(0); }
-              100% { transform: translateX(-50%); }
-            }
-            .marquee-track {
-              display: flex;
-              width: max-content;
-              animation: marquee-infinite 24s linear infinite;
-            }
-          `}</style>
           <div className="marquee-track">
-            {[...techMarquee, ...techMarquee, ...techMarquee, ...techMarquee].map((tech, i) => (
+            {[...TECH_MARQUEE, ...TECH_MARQUEE, ...TECH_MARQUEE, ...TECH_MARQUEE].map((tech, i) => (
               <span key={i} className="flex items-center gap-2 font-mono text-pixel-blue/40 text-xs mx-4 whitespace-nowrap">
-                <span className="text-pixel-cyan/50">◆</span> {tech}
+                <PixelIcon name="dot" size={7} className="text-pixel-cyan/50" /> {tech}
               </span>
             ))}
           </div>
@@ -82,7 +65,6 @@ export default function Footer() {
         {/* Main content */}
         <div className="max-w-6xl mx-auto px-6 pt-12 pb-4">
           <div className="grid md:grid-cols-3 gap-8 mb-8">
-
             {/* Brand */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
@@ -91,33 +73,47 @@ export default function Footer() {
                     className="absolute inset-0 bg-pixel-blue/20 border border-pixel-blue/50"
                     style={{ clipPath: 'polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%)' }}
                   />
-                  <span className="absolute inset-0 flex items-center justify-center font-pixel text-pixel-blue text-xs">RA</span>
+                  <span className="absolute inset-0 flex items-center justify-center font-pixel text-pixel-blue text-[10px]">RA</span>
                 </div>
-                <span className="font-sans font-bold text-pixel-white text-lg">Rahmat Aditya</span>
+                <span className="font-pixel text-pixel-white text-xs">{SITE.name}</span>
               </div>
               <p className="font-mono text-pixel-gray/70 text-xs leading-relaxed">
-                Game Developer & Web Enthusiast from Sumatera Barat, Indonesia.
+                {SITE.role} from {SITE.location}.
                 Building worlds, one commit at a time.
               </p>
               <div className="flex gap-3">
-                {socials.map(({ icon, href, label }) => (
-                  <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-                    className="w-8 h-8 flex items-center justify-center border border-pixel-blue/30 text-pixel-gray hover:text-pixel-blue hover:border-pixel-blue/70 hover:bg-pixel-blue/10 transition-all text-sm backdrop-blur-sm">
-                    {icon}
-                  </a>
-                ))}
+                {SOCIALS.map(({ id, label, href, value }) => {
+                  const Icon = SOCIAL_ICON[id]
+                  return (
+                    <a
+                      key={id}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={label}
+                      title={value}
+                      className="w-8 h-8 flex items-center justify-center border border-pixel-blue/30 text-pixel-gray hover:text-pixel-cyan hover:border-pixel-cyan/60 hover:bg-pixel-cyan/10 transition-colors backdrop-blur-sm"
+                    >
+                      <Icon size={15} aria-hidden />
+                    </a>
+                  )
+                })}
               </div>
             </div>
 
-            {/* Navigation */}
+            {/* Waypoint list */}
             <div>
-              <p className="font-pixel text-pixel-blue/60 text-[9px] tracking-widest mb-4">NAVIGATION</p>
+              <p className="font-pixel text-pixel-blue/60 text-[9px] tracking-widest mb-4">WAYPOINTS</p>
               <ul className="space-y-2">
-                {navLinks.map(({ label, href }) => (
-                  <li key={href}>
-                    <button onClick={() => handleNav(href)}
-                      className="font-mono text-pixel-gray/70 text-sm hover:text-pixel-blue transition-colors flex items-center gap-2 group">
-                      <span className="text-pixel-blue/40 group-hover:text-pixel-blue transition-colors">›</span>
+                {NAV_ITEMS.map(({ id, label, index }) => (
+                  <li key={id}>
+                    <button
+                      onClick={() => handleNav(id)}
+                      className="font-mono text-pixel-gray/70 text-sm hover:text-pixel-cyan transition-colors flex items-center gap-2 group w-full"
+                    >
+                      <span className="font-pixel text-[8px] text-pixel-blue/40 group-hover:text-pixel-cyan/70 transition-colors">
+                        {index}
+                      </span>
                       {label}
                     </button>
                   </li>
@@ -145,7 +141,9 @@ export default function Footer() {
                   <p className="font-pixel text-pixel-gray/40 text-[8px] mb-2">BUILT WITH</p>
                   <div className="flex flex-wrap gap-1.5">
                     {['React', 'Vite', 'Tailwind', 'Framer'].map(t => (
-                      <span key={t} className="font-mono text-pixel-blue/50 text-xs px-1.5 py-0.5 border border-pixel-blue/20 bg-bg-primary/20 backdrop-blur-sm">{t}</span>
+                      <span key={t} className="font-mono text-pixel-blue/50 text-xs px-1.5 py-0.5 border border-pixel-blue/20 bg-bg-primary/20 backdrop-blur-sm">
+                        {t}
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -154,23 +152,34 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Knight runner */}
-        <div className="relative" style={{ height: '100px', filter: 'drop-shadow(0 0 6px rgba(0,200,255,0.25))' }}>
-          <KnightRunner />
+        {/* Knight runner — clickable for the hidden BRAVE KNIGHT achievement */}
+        <div className="relative" style={{ height: '100px' }}>
+          <button
+            type="button"
+            onClick={pokeKnight}
+            aria-label="Poke the running knight"
+            title="..."
+            className="absolute inset-0 z-30 cursor-pointer"
+            style={{ background: 'transparent' }}
+          />
+          <div className="absolute inset-0" style={{ filter: 'drop-shadow(0 0 6px rgba(0,200,255,0.25))' }}>
+            <KnightRunner />
+          </div>
         </div>
 
         {/* Copyright bar */}
         <div className="border-t border-white/5 bg-bg-primary/40 backdrop-blur-sm">
           <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="font-mono text-pixel-gray/50 text-xs">© {year} Rahmat Aditya. All rights reserved.</p>
+            <p className="font-mono text-pixel-gray/50 text-xs">© {year} {SITE.name}. All rights reserved.</p>
             <p className="font-mono text-pixel-gray/50 text-xs flex items-center gap-1.5">
-              Made with <FiHeart className="text-red-400/70 text-xs animate-pulse mx-1" /> and too much coffee
+              Made with
+              <PixelIcon name="heart" size={12} className="text-red-400/80 animate-pulse mx-0.5" />
+              and too much coffee
             </p>
-            <p className="font-pixel text-pixel-gray/30 text-[8px]">v2.0.0 · GAME ON</p>
+            <p className="font-pixel text-pixel-gray/30 text-[8px]">{SITE.version} · GAME ON</p>
           </div>
         </div>
       </div>
-
     </footer>
   )
 }

@@ -1,12 +1,19 @@
 import { useState, lazy, Suspense, useEffect, useRef } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Helmet, HelmetProvider } from 'react-helmet-async'
+import { MotionConfig } from 'framer-motion'
 
-import RightClickGuard from './custom/RightClickGuard'
 import SectionLoader   from './custom/SectionLoader'
-// import IdleManager     from './custom/IdleManager'
+import IdleManager     from './custom/IdleManager'
 import NotFound        from './custom/NotFound'
 const AdminApp = lazy(() => import('./admin/App'))
+
+import { AchievementsProvider } from './components/systems/AchievementsProvider'
+import AchievementToast from './components/systems/AchievementToast'
+import DevConsole      from './components/systems/DevConsole'
+import HUD             from './components/systems/HUD'
+import useZoneTracking from './components/systems/useZoneTracking'
+import { SITE } from './data/site'
 
 import GameLoadingScreen from './components/GameLoadingScreen'
 import Navbar            from './components/Navbar'
@@ -23,31 +30,28 @@ const preloadCertificates = () => import('./components/Certificates')
 import Skills            from './components/Skills'
 import Contact           from './components/Contact'
 import Footer            from './components/Footer'
-import SectionDivider    from './components/SectionDivider'
 const GitHubActivity = lazy(() => import('./components/GithubActivity'))
 import Education        from './components/Education'
 
 // chat ai
 const ChangliChat = lazy(() => import('./chat-ai/components/ChangliChat'))
 
-// SEO Meta Tags
-const SITE_URL    = 'https://ditdev.kyuzenstudio.com'
-const OG_IMAGE    = `${SITE_URL}/og-image.png` // 1200x630px
+const OG_IMAGE = `${SITE.url}/og-image.png` // 1200x630px
 
 function SEO() {
   return (
     <Helmet>
       {/* Primary */}
-      <title>Rahmat Aditya - Game Developer & Web Enthusiast</title>
-      <meta name="description" content="Portfolio of Rahmat Aditya, a Game Developer and Web Enthusiast from Sumatera Barat, Indonesia. Specializing in Unity, Godot, C#, and React." />
+      <title>Rahmat Aditya - Game Developer & Web Developer</title>
+      <meta name="description" content="Portfolio of Rahmat Aditya, a Game Developer and Web Developer from Sumatera Barat, Indonesia. Specializing in Unity, Godot, C#, and React." />
       <meta name="keywords" content="Rahmat Aditya, Game Developer, Unity, Godot, C#, React, Web Developer, Sumatera Barat, Indonesia, indie game, portfolio" />
       <meta name="author" content="Rahmat Aditya" />
-      <link rel="canonical" href={SITE_URL} />
+      <link rel="canonical" href={SITE.url} />
 
       {/* Open Graph - Facebook, WhatsApp, Discord, Telegram */}
       <meta property="og:type"        content="website" />
-      <meta property="og:url"         content={SITE_URL} />
-      <meta property="og:title"       content="Rahmat Aditya - Game Developer & Web Enthusiast" />
+      <meta property="og:url"         content={SITE.url} />
+      <meta property="og:title"       content="Rahmat Aditya - Game Developer & Web Developer" />
       <meta property="og:description" content="Game Developer from Sumatera Barat. Building worlds with Unity, Godot & React. Check out my projects and skills." />
       <meta property="og:image"       content={OG_IMAGE} />
       <meta property="og:image:width"  content="1200" />
@@ -57,8 +61,8 @@ function SEO() {
 
       {/* Twitter Card */}
       <meta name="twitter:card"        content="summary_large_image" />
-      <meta name="twitter:url"         content={SITE_URL} />
-      <meta name="twitter:title"       content="Rahmat Aditya - Game Developer & Web Enthusiast" />
+      <meta name="twitter:url"         content={SITE.url} />
+      <meta name="twitter:title"       content="Rahmat Aditya - Game Developer & Web Developer" />
       <meta name="twitter:description" content="Game Developer from Sumatera Barat. Building worlds with Unity, Godot & React." />
       <meta name="twitter:image"       content={OG_IMAGE} />
 
@@ -76,11 +80,34 @@ function Portfolio() {
   const [loaded, setLoaded] = useState(
     () => sessionStorage.getItem('ditdev_intro_seen') === '1',
   )
+  const [consoleOpen, setConsoleOpen] = useState(false)
 
   const handleIntroComplete = () => {
     sessionStorage.setItem('ditdev_intro_seen', '1')
     setLoaded(true)
   }
+
+  // Tracks which zones the player has scrolled through (HUD map meter).
+  useZoneTracking()
+
+  // `~` (or `) toggles the dev console from anywhere.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      if (typing) return
+      if (e.key === '~' || e.key === '`') {
+        e.preventDefault()
+        setConsoleOpen(v => !v)
+      } else if (e.key === 'Escape') {
+        setConsoleOpen(false)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const navigateTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 
   const preloadRef = useRef<HTMLDivElement>(null)
 
@@ -93,15 +120,10 @@ function Portfolio() {
           observer.disconnect()
         }
       },
-      {
-        rootMargin: '400px'
-      }
+      { rootMargin: '400px' }
     )
 
-    if (preloadRef.current) {
-      observer.observe(preloadRef.current)
-    }
-
+    if (preloadRef.current) observer.observe(preloadRef.current)
     return () => observer.disconnect()
   }, [])
 
@@ -118,11 +140,10 @@ function Portfolio() {
       {!loaded && <GameLoadingScreen onComplete={handleIntroComplete} />}
       <div className={`transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <Navbar />
+        <HUD onOpenConsole={() => setConsoleOpen(true)} />
         <main className="relative z-10">
           <Hero />
-          <SectionDivider />
           <About />
-          <SectionDivider />
 
           <div ref={preloadRef}></div>
 
@@ -130,17 +151,13 @@ function Portfolio() {
             <Projects />
           </Suspense>
 
-          <SectionDivider />
-
           <Suspense fallback={<SectionLoader label="LOADING CERTIFICATES..." />}>
             <Certificates />
           </Suspense>
 
-          <SectionDivider />
           <Skills />
           <Education />
           <GitHubActivity />
-          <SectionDivider />
           <Contact />
         </main>
         <Footer />
@@ -148,6 +165,13 @@ function Portfolio() {
           <ChangliChat />
         </Suspense>
       </div>
+
+      <AchievementToast />
+      <DevConsole
+        open={consoleOpen}
+        onClose={() => setConsoleOpen(false)}
+        onNavigate={navigateTo}
+      />
     </div>
   )
 }
@@ -155,19 +179,21 @@ function Portfolio() {
 export default function App() {
   return (
     <HelmetProvider>
-      <RightClickGuard>
-        {/* <IdleManager> */}
-          <Suspense fallback={null}>
-            <Routes>
-              <Route path="/" element={<Portfolio />} />
-              <Route path="/projects/:nameprojects" element={<ProjectDetail />} />
-              <Route path="/admin" element={<AdminApp />} />
-              <Route path="/admin/*" element={<AdminApp />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        {/* </IdleManager> */}
-      </RightClickGuard>
+      <MotionConfig reducedMotion="user">
+        <AchievementsProvider>
+          <IdleManager>
+            <Suspense fallback={null}>
+              <Routes>
+                <Route path="/" element={<Portfolio />} />
+                <Route path="/projects/:nameprojects" element={<ProjectDetail />} />
+                <Route path="/admin" element={<AdminApp />} />
+                <Route path="/admin/*" element={<AdminApp />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </IdleManager>
+        </AchievementsProvider>
+      </MotionConfig>
     </HelmetProvider>
   )
 }

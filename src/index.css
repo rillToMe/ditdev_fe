@@ -1,16 +1,20 @@
 @import "tailwindcss";
 
 @theme {
-  /* fontFamily */
+  /* fontFamily — two fonts only: Press Start 2P for display/HUD,
+     JetBrains Mono for everything else. */
   --font-pixel: "Press Start 2P", cursive;
   --font-mono: "JetBrains Mono", monospace;
-  --font-sans: "Outfit", sans-serif;
 
   /* colors: bg  */
   --color-bg-primary: #0a0e1a;
   --color-bg-secondary: #0d1224;
   --color-bg-card: #111827;
   --color-bg-hover: #1a2035;
+
+  /* accent: gold (legendary / XP / achievements) */
+  --color-pixel-gold: #ffd700;
+  --color-pixel-gold-dim: #b8860b;
 
   /* colors: pixel */
   --color-pixel-blue: #4f8cff;
@@ -56,6 +60,9 @@
   --animate-slide-up: slideUp 0.6s ease forwards;
   --animate-spin-slow: spin 8s linear infinite;
   --animate-marquee: marquee 25s linear infinite;
+  --animate-gold-shimmer: goldShimmer 3s linear infinite;
+  --animate-scan-sweep: scanSweep 2.4s linear infinite;
+  --animate-pulse-soft: pulseSoft 2.4s ease-in-out infinite;
 
   @keyframes blink {
     0%, 100% { opacity: 1; }
@@ -84,6 +91,18 @@
   @keyframes marquee {
     0% { transform: translateX(0); }
     100% { transform: translateX(-50%); }
+  }
+  @keyframes goldShimmer {
+    0% { background-position-x: 0%; }
+    100% { background-position-x: 300%; }
+  }
+  @keyframes scanSweep {
+    0% { left: -20%; }
+    100% { left: 120%; }
+  }
+  @keyframes pulseSoft {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 1; }
   }
 
   /* boxShadow / dropShadow */
@@ -125,7 +144,7 @@
   body {
     background-color: var(--bg-primary);
     color: var(--pixel-white);
-    font-family: 'Outfit', sans-serif;
+    font-family: 'JetBrains Mono', monospace;
     overflow-x: hidden;
   }
 
@@ -210,53 +229,12 @@
   pointer-events: none;
 }
 
-.section-tag {
-  font-family: 'Press Start 2P', cursive;
-  font-size: 0.6rem;
-  color: var(--pixel-cyan);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-}
-
 .text-glow-blue {
   text-shadow: 0 0 10px rgba(79, 140, 255, 0.8), 0 0 20px rgba(79, 140, 255, 0.4);
 }
 
 .text-glow-cyan {
   text-shadow: 0 0 10px rgba(0, 212, 255, 0.8), 0 0 20px rgba(0, 212, 255, 0.4);
-}
-
-.btn-pixel {
-  position: relative;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  padding: 0.75rem 1.75rem;
-  border: 1px solid rgba(79, 140, 255, 0.5);
-  background: rgba(79, 140, 255, 0.08);
-  color: var(--pixel-blue);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
-}
-
-.btn-pixel:hover {
-  background: rgba(79, 140, 255, 0.2);
-  border-color: var(--pixel-blue);
-  box-shadow: 0 0 20px rgba(79, 140, 255, 0.4);
-  transform: translateY(-1px);
-}
-
-.btn-pixel-primary {
-  background: rgba(79, 140, 255, 0.15);
-  border-color: var(--pixel-blue);
-  color: #fff;
-}
-
-.btn-pixel-primary:hover {
-  background: rgba(79, 140, 255, 0.3);
-  box-shadow: 0 0 25px rgba(79, 140, 255, 0.5);
 }
 
 .grid-overlay {
@@ -294,20 +272,6 @@
   100% { opacity: 0; transform: translateY(-80px) translateX(20px); }
 }
 
-.section-divider {
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(79, 140, 255, 0.4) 20%,
-    rgba(0, 212, 255, 0.4) 50%,
-    rgba(79, 140, 255, 0.4) 80%,
-    transparent 100%
-  );
-  margin: 0 auto;
-  position: relative;
-}
-
 .card-hover {
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
@@ -325,9 +289,9 @@
 
 /* ── Long-form markdown (project overview) ────────────── */
 .md-body {
-  color: var(--pixel-gray);
-  font-size: 0.95rem;
-  line-height: 1.85;
+  color: #b8c0d4;
+  font-size: 1rem;
+  line-height: 1.9;
   word-wrap: break-word;
 }
 
@@ -524,9 +488,9 @@
 }
 
 /* Clickable elements → Changli hand. :where() keeps specificity at
-   0, and !important makes sure earlier unlayered rules such as
-   `.btn-pixel { cursor: pointer }` can't leak the native cursor. */
-:where(a[href], area[href], button, input[type='submit' i], input[type='reset' i], input[type='button' i], [role='button'], [role='link'], [role='tab'], [role='menuitem'], .cursor-pointer, .btn-pixel) {
+   0, and !important makes sure earlier unlayered rules can't leak the
+   native cursor. */
+:where(a[href], area[href], button, input[type='submit' i], input[type='reset' i], input[type='button' i], [role='button'], [role='link'], [role='tab'], [role='menuitem'], .cursor-pointer) {
   cursor: var(--cur-link), pointer !important;
 }
 
@@ -597,4 +561,111 @@
 }
 .cursor-zoom-out {
   cursor: zoom-out;
+}
+
+/* ── Zone / HUD utilities ───────────────────────────────────────────── */
+
+/* Cut-corner clip used across cards and panels. */
+.clip-notch {
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+}
+.clip-notch-sm {
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+.clip-tag {
+  clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+}
+
+/* Animated gold XP bar (CSS-driven — no per-frame React state). */
+.gold-bar {
+  background: linear-gradient(
+    90deg,
+    #5c4a00 0%, #ffd700 20%, #fff3a0 35%, #ffd700 50%,
+    #caa300 65%, #ffd700 80%, #5c4a00 100%
+  );
+  background-size: 300% 100%;
+  animation: goldShimmer 3s linear infinite;
+}
+
+/* Scanning highlight sweep for bars. */
+.scan-sweep {
+  animation: scanSweep 2.4s linear infinite;
+}
+
+/* Thin grid backdrop used sparingly behind sections. */
+.grid-faint {
+  background-image:
+    linear-gradient(rgba(79, 140, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79, 140, 255, 0.03) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* Infinite tech marquee (moved out of the Footer inline <style>). */
+@keyframes marquee-infinite {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-infinite 24s linear infinite;
+}
+
+/* ── Admin: image-crop slider (moved out of ImageCropper inline <style>) ── */
+.pixel-slider {
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  background: rgba(79, 140, 255, 0.15);
+  cursor: pointer;
+  border: none;
+}
+.pixel-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #4f8cff;
+  cursor: pointer;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  box-shadow: 0 0 8px rgba(79, 140, 255, 0.5);
+}
+.pixel-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #4f8cff;
+  cursor: pointer;
+  border: none;
+  border-radius: 0;
+  box-shadow: 0 0 8px rgba(79, 140, 255, 0.5);
+}
+.pixel-slider::-webkit-slider-runnable-track {
+  background: rgba(79, 140, 255, 0.12);
+}
+
+/* ── Admin: date input (moved out of StatsManager inline <style>) ── */
+.pixel-date::-webkit-calendar-picker-indicator {
+  filter: invert(0.6) sepia(1) saturate(3) hue-rotate(180deg) brightness(1.2);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 2px;
+  opacity: 0.7;
+}
+.pixel-date::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  filter: invert(0.8) sepia(1) saturate(4) hue-rotate(180deg) brightness(1.4);
+}
+.pixel-date::-webkit-inner-spin-button {
+  display: none;
+}
+
+/* ── Accessibility: honour reduced-motion globally ──────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

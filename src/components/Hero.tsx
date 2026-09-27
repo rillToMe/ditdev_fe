@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { FiGithub, FiInstagram } from 'react-icons/fi'
-import { HiLocationMarker } from 'react-icons/hi'
-import { SiTiktok } from 'react-icons/si'
+import PixelIcon from './systems/PixelIcon'
+import PixelButton from './systems/PixelButton'
+import { SOCIALS, SITE } from '../data/site'
 import useTypewriter from '../hooks/useTypewriter'
+import { useInViewport } from './systems/useInViewport'
+import { DUR, EASE, stagger, assemble } from '../lib/motion'
 
-const roles = [
+const ROLES = [
   'Game Developer',
   'Web Enthusiast',
   'Unity Programmer',
@@ -13,215 +15,204 @@ const roles = [
   'C# Programmer',
 ]
 
+interface Star {
+  x: number
+  y: number
+  size: number
+  opacity: number
+  blinkSpeed: number
+  blinkDir: number
+  color: string
+  drift: number
+}
+
+/** Title screen: parallax starfield, player plate, menu-style actions. */
 export default function Hero() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const typed = useTypewriter(roles, 80, 40, 1800)
+  const typed = useTypewriter(ROLES, 80, 40, 1800)
+  const { ref: viewRef, inView } = useInViewport<HTMLElement>({ rootMargin: '0px' })
 
+  // Starfield — paused when the title screen scrolls away.
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas || !inView) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
+
     let animId = 0
-    const particles: Star[] = []
+    let width = 0
+    let height = 0
+    const stars: Star[] = []
+    const parallax = { x: 0, y: 0, tx: 0, ty: 0 }
+
+    const makeStar = (): Star => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      size: Math.random() * 1.6 + 0.5,
+      opacity: Math.random() * 0.5 + 0.1,
+      blinkSpeed: Math.random() * 0.01 + 0.003,
+      blinkDir: Math.random() > 0.5 ? 1 : -1,
+      color: Math.random() > 0.8 ? '#00d4ff' : '#4f8cff',
+      drift: Math.random() * 0.05 + 0.015,
+    })
 
     const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      width = canvas.width = window.innerWidth
+      height = canvas.height = window.innerHeight
     }
-
     resize()
-    window.addEventListener('resize', resize)
+    for (let i = 0; i < 110; i++) stars.push(makeStar())
 
-    class Star {
-      cv: HTMLCanvasElement
-      context: CanvasRenderingContext2D
-      x = 0
-      y = 0
-      size = 0
-      opacity = 0
-      blinkSpeed = 0
-      blinkDir = 1
-      color = '#4f8cff'
-
-      constructor(cv: HTMLCanvasElement, context: CanvasRenderingContext2D) {
-        this.cv = cv
-        this.context = context
-        this.reset()
-      }
-      reset() {
-        this.x = Math.random() * this.cv.width
-        this.y = Math.random() * this.cv.height
-        this.size = Math.random() * 1.5 + 0.5
-        this.opacity = Math.random() * 0.5 + 0.1
-        this.blinkSpeed = Math.random() * 0.01 + 0.003
-        this.blinkDir = Math.random() > 0.5 ? 1 : -1
-        this.color = Math.random() > 0.8 ? '#00d4ff' : '#4f8cff'
-      }
-      update() {
-        this.opacity += this.blinkSpeed * this.blinkDir
-        if (this.opacity > 0.8 || this.opacity < 0.05) this.blinkDir *= -1
-      }
-      draw() {
-        this.context.save()
-        this.context.globalAlpha = this.opacity
-        this.context.fillStyle = this.color
-        this.context.fillRect(this.x, this.y, this.size, this.size)
-        this.context.restore()
-      }
+    const onMove = (e: MouseEvent) => {
+      parallax.tx = (e.clientX / window.innerWidth - 0.5) * 18
+      parallax.ty = (e.clientY / window.innerHeight - 0.5) * 18
     }
-
-    for (let i = 0; i < 120; i++) particles.push(new Star(canvas, ctx))
 
     const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-      particles.forEach(p => { p.update(); p.draw() })
+      parallax.x += (parallax.tx - parallax.x) * 0.05
+      parallax.y += (parallax.ty - parallax.y) * 0.05
+      ctx.clearRect(0, 0, width, height)
+
+      for (const s of stars) {
+        s.opacity += s.blinkSpeed * s.blinkDir
+        if (s.opacity > 0.85 || s.opacity < 0.05) s.blinkDir *= -1
+        s.y -= s.drift
+        if (s.y < -2) { s.y = height + 2; s.x = Math.random() * width }
+
+        ctx.globalAlpha = s.opacity
+        ctx.fillStyle = s.color
+        ctx.fillRect(s.x + parallax.x, s.y + parallax.y, s.size, s.size)
+      }
+      ctx.globalAlpha = 1
       animId = requestAnimationFrame(animate)
     }
 
+    window.addEventListener('resize', resize)
+    window.addEventListener('mousemove', onMove)
     animate()
+
     return () => {
       cancelAnimationFrame(animId)
       window.removeEventListener('resize', resize)
+      window.removeEventListener('mousemove', onMove)
     }
-  }, [])
+  }, [inView])
 
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section
+      id="home"
+      ref={viewRef}
+      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+    >
       <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" />
-      <div className="absolute inset-0 grid-overlay opacity-100 pointer-events-none" />
-      <div className="absolute inset-0 pointer-events-none">
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(79,140,255,0.06) 0%, rgba(0,212,255,0.03) 40%, transparent 70%)' }}
-        />
-      </div>
+      <div className="absolute inset-0 grid-faint opacity-70 pointer-events-none" />
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[620px] h-[620px] rounded-full pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(79,140,255,0.07) 0%, rgba(0,212,255,0.03) 42%, transparent 70%)' }}
+      />
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-20 pb-8 md:pt-24 md:pb-20">
-        {/* Status badge */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="inline-flex items-center gap-2 mb-8"
-        >
-          <div
-            className="flex items-center gap-2 px-4 py-2 border border-green-400/30 bg-green-400/5"
-            style={{ clipPath: 'polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%)' }}
-          >
-            <span className="w-2 h-2 bg-green-400 animate-pulse" />
-            <span className="font-mono text-green-400 text-xs tracking-widest">AVAILABLE FOR WORK</span>
-          </div>
+      <motion.div
+        variants={stagger(0.11, 0.15)}
+        initial="hidden"
+        animate="show"
+        className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-24 pb-10"
+      >
+        {/* Save-slot header */}
+        <motion.div variants={assemble} className="inline-flex items-center gap-2.5 mb-7">
+          <span className="w-1.5 h-1.5 bg-green-400 animate-pulse" />
+          <span className="font-pixel text-[9px] tracking-[0.28em] text-green-400/90">
+            SAVE SLOT 01 · ONLINE
+          </span>
         </motion.div>
 
-        {/* Name */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.7 }}
-        >
-          <p className="font-pixel text-pixel-cyan text-xs tracking-widest mb-4">// PLAYER ONE</p>
-          <h1 className="font-sans font-extrabold leading-none mb-2">
-            <span className="block text-5xl md:text-7xl lg:text-8xl text-pixel-white">Rahmat</span>
-            <span className="block text-5xl md:text-7xl lg:text-8xl gradient-text">Aditya</span>
+        {/* Name plate */}
+        <motion.div variants={assemble}>
+          <p className="font-mono text-pixel-cyan/80 text-xs tracking-[0.35em] mb-4">
+            {'// '}{SITE.player}
+          </p>
+          <h1 className="font-pixel leading-[1.35] mb-3">
+            <span className="block text-3xl sm:text-5xl lg:text-6xl text-pixel-white">
+              {SITE.firstName}
+            </span>
+            <span className="block text-3xl sm:text-5xl lg:text-6xl gradient-text">
+              {SITE.lastName}
+            </span>
           </h1>
         </motion.div>
 
-        {/* Typewriter */}
+        {/* Class / role typewriter */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.5 }}
-          className="mt-6 mb-8 h-8 flex items-center justify-center"
+          variants={assemble}
+          className="mt-6 mb-3 h-8 flex items-center justify-center"
         >
-          <span className="font-mono text-pixel-gray text-lg">
+          <span className="font-mono text-pixel-gray text-base sm:text-lg">
             <span className="text-pixel-blue mr-2">&gt;</span>
             <span className="text-pixel-white">{typed}</span>
             <span className="inline-block w-0.5 h-5 bg-pixel-cyan ml-0.5 animate-blink" />
           </span>
         </motion.div>
 
-        {/* Location */}
+        <motion.p variants={assemble} className="flex items-center justify-center gap-2 mb-10 font-mono text-pixel-gray/70 text-sm">
+          <PixelIcon name="pin" size={13} className="text-pixel-blue" />
+          {SITE.location}
+        </motion.p>
+
+        {/* Menu actions */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.5 }}
-          className="flex items-center justify-center gap-2 mb-10"
+          variants={assemble}
+          className="flex flex-wrap items-center justify-center gap-3 mb-12"
         >
-          <HiLocationMarker className="text-pixel-blue text-sm" />
-          <span className="font-mono text-pixel-gray text-sm">Sumatera Barat, Indonesia</span>
+          <PixelButton variant="primary" cursor icon="sword" onClick={() => scrollTo('projects')}>
+            VIEW QUESTS
+          </PixelButton>
+          <PixelButton variant="ghost" cursor icon="mail" onClick={() => scrollTo('contact')}>
+            CONTACT
+          </PixelButton>
+          <PixelButton variant="ghost" cursor icon="download" href="/cv.pdf" title="Download CV">
+            DOWNLOAD CV
+          </PixelButton>
         </motion.div>
 
-        {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1, duration: 0.5 }}
-          className="flex flex-wrap items-center justify-center gap-4 mb-12"
-        >
-          <button onClick={() => scrollTo('projects')} className="btn-pixel btn-pixel-primary text-sm">
-            <span className="mr-2">⚔</span> View Projects
-          </button>
-          <button onClick={() => scrollTo('contact')} className="btn-pixel text-sm">
-            <span className="mr-2">✉</span> Contact Me
-          </button>
-          <a
-            href="/cv.pdf"
-            download="Rahmat_Aditya_CV.pdf"
-            className="btn-pixel text-sm"
-          >
-            <span className="mr-2">↓</span> Download CV
-          </a>
-        </motion.div>
-
-        {/* Socials */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2, duration: 0.5 }}
-          className="flex items-center justify-center gap-4"
-        >
-          {[
-            { href: 'https://github.com/rillToMe', icon: <FiGithub />, label: 'GitHub' },
-            { href: 'https://www.tiktok.com/@goodvibes_music28', icon: <SiTiktok />, label: 'TikTok' },
-            { href: 'https://www.instagram.com/rill_lyrics/', icon: <FiInstagram />, label: 'Instagram' },
-          ].map(({ href, icon, label }) => (
+        {/* Party links */}
+        <motion.div variants={assemble} className="flex items-center justify-center gap-4">
+          {SOCIALS.map(s => (
             <a
-              key={label}
-              href={href}
+              key={s.id}
+              href={s.href}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label={label}
-              className="w-10 h-10 flex items-center justify-center border border-pixel-blue/20 text-pixel-gray hover:text-pixel-blue hover:border-pixel-blue/60 hover:bg-pixel-blue/10 transition-all duration-200 text-lg"
-              style={{ clipPath: 'polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%)' }}
+              aria-label={s.label}
+              className="group flex items-center gap-2 px-3 py-2 border border-pixel-blue/20 text-pixel-gray hover:text-pixel-cyan hover:border-pixel-cyan/50 hover:bg-pixel-cyan/5 transition-colors font-mono text-xs"
+              style={{ clipPath: 'polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%)' }}
             >
-              {icon}
+              <span className="w-1.5 h-1.5 bg-pixel-blue/50 group-hover:bg-pixel-cyan transition-colors" />
+              {s.label}
             </a>
           ))}
         </motion.div>
-      </div>
+      </motion.div>
 
-      {/* Scroll indicator */}
-      <motion.div
+      {/* Press-to-scroll prompt */}
+      <motion.button
+        onClick={() => scrollTo('about')}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.5 }}
-        className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+        transition={{ delay: 1.4, duration: DUR.slow, ease: EASE.snap }}
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 group"
+        aria-label="Scroll to About"
       >
-        <span className="font-pixel text-pixel-gray/40 text-[8px] tracking-widest">SCROLL</span>
-        <div className="flex flex-col gap-1">
-          {[0, 1, 2].map(i => (
-            <motion.div
-              key={i}
-              className="w-1 h-1 bg-pixel-blue/40"
-              animate={{ opacity: [0.2, 1, 0.2] }}
-              transition={{ duration: 1.2, delay: i * 0.2, repeat: Infinity }}
-            />
-          ))}
-        </div>
-      </motion.div>
+        <span className="font-pixel text-pixel-gray/40 group-hover:text-pixel-cyan/70 text-[8px] tracking-widest transition-colors">
+          PRESS ▼ TO START
+        </span>
+        <motion.div
+          animate={{ y: [0, 4, 0] }}
+          transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <PixelIcon name="chevronDown" size={14} className="text-pixel-blue/50 group-hover:text-pixel-cyan transition-colors" />
+        </motion.div>
+      </motion.button>
     </section>
   )
 }

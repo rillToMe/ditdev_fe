@@ -7,20 +7,7 @@ import Portal from './Portal'
 
 const pixelClip = 'polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%)'
 
-const dateInputStyle = `
-  .pixel-date::-webkit-calendar-picker-indicator {
-    filter: invert(0.6) sepia(1) saturate(3) hue-rotate(180deg) brightness(1.2);
-    cursor: pointer;
-    padding: 2px;
-    border-radius: 2px;
-    opacity: 0.7;
-  }
-  .pixel-date::-webkit-calendar-picker-indicator:hover {
-    opacity: 1;
-    filter: invert(0.8) sepia(1) saturate(4) hue-rotate(180deg) brightness(1.4);
-  }
-  .pixel-date::-webkit-inner-spin-button { display: none; }
-`
+// Date-input styling now lives in index.css (.pixel-date).
 
 const inputClass = [
   'w-full px-4 py-2.5 text-sm font-mono',
@@ -82,7 +69,6 @@ export default function StatsManager({ stats, onUpdate }: StatsManagerProps) {
 
   return (
     <>
-      <style>{dateInputStyle}</style>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
+import { SITE } from '../data/site'
 import catSprite from '../assets/footer_parallax/cat/cat_walk.png'
 
 const FRAME_WIDTH  = 32
@@ -23,12 +25,12 @@ const LOADING_MESSAGES = [
 ]
 
 const TIPS = [
-  "💡 Tip: Check out the Projects section to see Rahmat's completed quests.",
-  '💡 Tip: Talk to CHANGLI-AI for a guided tour of this realm.',
-  '💡 Tip: Rahmat specializes in Unity, Godot, and React.',
-  '💡 Tip: Located in Sumatera Barat, Indonesia.',
-  '💡 Tip: Available for freelance and collaborations.',
-  '💡 Tip: The knight in the footer never tires. True dedication.',
+  "TIP // Check out the Projects section to see Rahmat's completed quests.",
+  'TIP // Talk to CHANGLI-AI for a guided tour of this realm.',
+  'TIP // Rahmat specializes in Unity, Godot, and React.',
+  'TIP // Located in Sumatera Barat, Indonesia.',
+  'TIP // Available for freelance and collaborations.',
+  'TIP // The knight in the footer never tires. True dedication.',
 ]
 
 interface GameLoadingScreenProps {
@@ -46,6 +48,36 @@ export default function GameLoadingScreen({ onComplete }: GameLoadingScreenProps
   const [tip,       setTip]       = useState(TIPS[0])
   const [fadeOut,   setFadeOut]   = useState(false)
   const [dots,      setDots]      = useState('')
+  const [ready,     setReady]     = useState(false)
+  const [started,   setStarted]   = useState(false)
+  const doneRef     = useRef(false)
+
+  // Idempotent completion — safe to call from the timer, a click or Enter.
+  const finish = useCallback(() => {
+    if (doneRef.current) return
+    doneRef.current = true
+    setFadeOut(true)
+    window.setTimeout(() => onComplete?.(), 300)
+  }, [onComplete])
+
+  // Skip: click anywhere or press Enter/Escape once the bar is done.
+  useEffect(() => {
+    if (!ready) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === 'Escape' || e.key === ' ') {
+        e.preventDefault()
+        setStarted(true)
+        finish()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [ready, finish])
+
+  const handleStart = useCallback(() => {
+    setStarted(true)
+    finish()
+  }, [finish])
 
   // Lock scroll while loading screen is visible
   useEffect(() => {
@@ -136,16 +168,14 @@ export default function GameLoadingScreen({ onComplete }: GameLoadingScreenProps
         if (stepIndex < progressSteps.length) {
           setTimeout(tick, 50)
         } else {
-          setTimeout(() => {
-            setFadeOut(true)
-            setTimeout(() => onComplete?.(), 300)
-          }, 150)
+          // Bar is full — hand control to the player ("PRESS START").
+          setReady(true)
         }
       }
     }
 
     setTimeout(tick, 100)
-  }, [onComplete])
+  }, [])
 
   // Blinking dots
   useEffect(() => {
@@ -164,6 +194,10 @@ export default function GameLoadingScreen({ onComplete }: GameLoadingScreenProps
         fadeOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
       style={{ background: '#0a0e1a' }}
+      onClick={ready ? handleStart : undefined}
+      role={ready ? 'button' : undefined}
+      tabIndex={ready ? 0 : undefined}
+      aria-label={ready ? 'Start exploring the realm' : undefined}
     >
       {/* Grid overlay */}
       <div className="absolute inset-0 grid-overlay opacity-60 pointer-events-none" />
@@ -259,7 +293,7 @@ export default function GameLoadingScreen({ onComplete }: GameLoadingScreenProps
               {progress < 100 ? `${progress}%` : '100% ✓'}
             </p>
             <p className="font-pixel text-pixel-gray/30 text-[8px]">
-              {progress < 100 ? 'LOADING' : 'READY'}
+              {progress < 100 ? 'LOADING' : ready ? 'READY' : 'FINALIZING'}
             </p>
           </div>
         </div>
@@ -289,10 +323,32 @@ export default function GameLoadingScreen({ onComplete }: GameLoadingScreenProps
 
       </div>
 
+      {/* PRESS START gate */}
+      {ready && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4"
+          style={{ background: 'rgba(10,14,26,0.72)', backdropFilter: 'blur(2px)' }}
+        >
+          <motion.p
+            animate={{ opacity: [1, 0.35, 1] }}
+            transition={{ duration: 1.4, repeat: Infinity }}
+            className="font-pixel text-pixel-cyan text-sm md:text-base tracking-[0.2em]"
+          >
+            PRESS START
+          </motion.p>
+          <p className="font-mono text-pixel-gray/50 text-xs">
+            {started ? 'Entering the realm…' : 'click anywhere · or press ENTER'}
+          </p>
+        </motion.div>
+      )}
+
       {/* Bottom tag */}
       <div className="absolute bottom-4 left-0 right-0 flex justify-center">
         <p className="font-pixel text-pixel-gray/20 text-[7px] tracking-widest">
-          v2.0.0 · GAME ON · SUMATERA BARAT
+          {SITE.version} · GAME ON · SUMATERA BARAT
         </p>
       </div>
     </div>

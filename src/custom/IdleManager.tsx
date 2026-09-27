@@ -4,6 +4,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import PixelIcon from '../components/systems/PixelIcon'
+import type { PixelIconName } from '../components/systems/PixelIcon'
 
 const IDLE_TIMEOUT      = 30_000
 const LONG_IDLE_TIMEOUT = 120_000
@@ -12,52 +14,52 @@ const SHAKE_THRESHOLD   = 800
 interface IdleMessage {
   title: string
   body: string
-  icon: string
+  icon: PixelIconName
 }
 
 const IDLE_MESSAGES: IdleMessage[] = [
   {
     title: 'Traveler?',
     body : 'You seem to have wandered off.\nThe realm awaits your return.',
-    icon : '👁️',
+    icon : 'star',
   },
   {
     title: 'Still there?',
     body : 'The constellation grows dim\nwithout a traveler to guide.',
-    icon : '🌌',
+    icon : 'sparkle',
   },
   {
     title: 'The realm is quiet...',
     body : 'Even the stars have stopped\nblinking. Are you still here?',
-    icon : '⭐',
+    icon : 'star',
   },
   {
     title: 'Quest paused.',
     body : "Your journey through Rahmat's\nportfolio has been suspended.",
-    icon : '⏸️',
+    icon : 'scroll',
   },
   {
     title: 'I am watching.',
     body : 'CHANGLI-AI never sleeps.\nBut you seem to have.',
-    icon : '🤖',
+    icon : 'terminal',
   },
 ]
 
 const LONG_IDLE_MESSAGES: IdleMessage[] = [
   {
-    title: 'HELLO?? 👋',
+    title: 'HELLO??',
     body : 'It has been a while, traveler.\nAre you lost in another realm?',
-    icon : '📡',
+    icon : 'info',
   },
   {
     title: 'System alert.',
     body : 'Inactivity detected for 2+ minutes.\nThe guardian grows impatient.',
-    icon : '⚠️',
+    icon : 'skull',
   },
 ]
 
 const WAKEUP_MESSAGES = [
-  'Welcome back, traveler. ⚔️',
+  'Welcome back, traveler.',
   'The realm lives again.',
   'Quest resumed.',
   'Good, you have returned.',
@@ -160,7 +162,7 @@ function AFKOverlay({ isIdle, isLongIdle, onWake, konamiActive }: AFKOverlayProp
                   exit={{ scale: 0 }}
                   className="absolute top-12 left-1/2 -translate-x-1/2 text-center"
                 >
-                  <p className="font-pixel text-yellow-400 text-sm">★ KONAMI CODE ACTIVATED ★</p>
+                  <p className="font-pixel text-yellow-400 text-sm">KONAMI CODE ACTIVATED</p>
                   <p className="font-mono text-yellow-400/60 text-xs mt-1">+99 RESPECT POINTS</p>
                 </motion.div>
               )}
@@ -180,9 +182,9 @@ function AFKOverlay({ isIdle, isLongIdle, onWake, konamiActive }: AFKOverlayProp
                 <motion.div
                   animate={{ y: [0, -8, 0] }}
                   transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                  className="text-4xl"
+                  className="text-pixel-cyan"
                 >
-                  {current.icon}
+                  <PixelIcon name={current.icon} size={36} />
                 </motion.div>
 
                 {/* Dialog box */}
@@ -229,7 +231,7 @@ function AFKOverlay({ isIdle, isLongIdle, onWake, konamiActive }: AFKOverlayProp
                   transition={{ duration: 2, repeat: Infinity }}
                   className="font-pixel text-red-500/50 text-[9px] tracking-widest"
                 >
-                  ⚠ EXTENDED INACTIVITY DETECTED
+                  EXTENDED INACTIVITY DETECTED
                 </motion.p>
               )}
             </AnimatePresence>

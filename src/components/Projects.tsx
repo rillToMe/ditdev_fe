@@ -2,9 +2,16 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
 import { useNavigate } from 'react-router-dom'
-import { FiGithub, FiExternalLink, FiLoader } from 'react-icons/fi'
+import { FiLoader } from 'react-icons/fi'
+import ZoneHeader from './systems/ZoneHeader'
+import PixelButton from './systems/PixelButton'
+import PixelIcon from './systems/PixelIcon'
+import { useAchievements } from './systems/AchievementsProvider'
 import { projectsAPI } from '../services/api'
 import { slugifyTitle } from '../utils/slug'
+import { getDifficulty, type Difficulty } from '../utils/difficulty'
+import { SITE } from '../data/site'
+import { assemble, stagger, slideIn, scalePop, VIEWPORT, DUR, EASE } from '../lib/motion'
 import type { Project } from '../types/api'
 
 const FALLBACK_PROJECTS: Project[] = [
@@ -21,45 +28,46 @@ const FALLBACK_PROJECTS: Project[] = [
 ]
 
 const TagBadge = ({ tag }: { tag: string }) => (
-  <span className="px-2 py-0.5 font-mono text-xs text-pixel-blue/70 border border-pixel-blue/20 bg-pixel-blue/5"
-    style={{ clipPath: 'polygon(3px 0%, 100% 0%, calc(100% - 3px) 100%, 0% 100%)' }}>
+  <span
+    className="px-2 py-0.5 font-mono text-[10px] text-pixel-blue/70 border border-pixel-blue/20 bg-pixel-blue/5"
+    style={{ clipPath: 'polygon(3px 0%, 100% 0%, calc(100% - 3px) 100%, 0% 100%)' }}
+  >
     {tag}
   </span>
 )
 
-interface ProjectCardProps {
-  project: Project
-  index: number
+function DifficultyTag({ difficulty }: { difficulty: Difficulty }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 border font-pixel text-[7px] tracking-widest"
+      style={{ color: difficulty.color, borderColor: `${difficulty.color}44`, background: `${difficulty.color}0d` }}
+    >
+      {difficulty.label}
+      <span className="flex gap-px" aria-hidden>
+        {Array.from({ length: difficulty.stars }).map((_, i) => (
+          <span key={i} className="w-1 h-1" style={{ background: difficulty.color }} />
+        ))}
+      </span>
+    </span>
+  )
 }
 
-const ProjectCard = ({ project, index }: ProjectCardProps) => {
-  const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.1 })
-  const navigate = useNavigate()
-
-  const openDetail = () => navigate(`/projects/${slugifyTitle(project.title)}`)
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') openDetail()
-  }
+/* ── Featured quest (first project, larger) ─────────────────────────── */
+function FeaturedQuest({ project, onOpen }: { project: Project; onOpen: () => void }) {
+  const difficulty = getDifficulty(project)
 
   return (
     <motion.div
-      ref={ref}
+      variants={assemble}
+      onClick={onOpen}
       role="link"
       tabIndex={0}
-      onClick={(e) => {
-        // Don't hijack clicks on the GitHub/Demo anchor links inside the card.
-        if ((e.target as HTMLElement).closest('a')) return
-        openDetail()
-      }}
-      onKeyDown={handleKeyDown}
-      initial={{ opacity: 0, y: 40 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay: index * 0.1, ease: 'easeOut' }}
-      className="group relative border border-pixel-blue/15 bg-bg-card/40 hover:border-pixel-blue/40 hover:bg-bg-hover/50 transition-all duration-300 overflow-hidden cursor-pointer outline-none focus-visible:border-pixel-blue/70"
-      style={{ clipPath: 'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))' }}
+      onKeyDown={e => { if (e.key === 'Enter') onOpen() }}
+      className="group relative grid md:grid-cols-2 border border-pixel-blue/20 bg-bg-card/40 hover:border-pixel-blue/50 transition-colors overflow-hidden cursor-pointer outline-none focus-visible:border-pixel-cyan/70"
+      style={{ clipPath: 'polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px))' }}
     >
-      {/* Thumbnail */}
-      <div className="relative h-44 overflow-hidden bg-bg-primary border-b border-pixel-blue/10">
+      {/* Preview */}
+      <div className="relative h-56 md:h-full min-h-56 bg-bg-primary border-b md:border-b-0 md:border-r border-pixel-blue/10 overflow-hidden">
         {project.thumbnail ? (
           <img
             src={project.thumbnail}
@@ -67,69 +75,118 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="absolute inset-0 grid-overlay flex items-center justify-center">
-            <div className="text-center">
-              <div className="font-pixel text-pixel-blue/20 text-3xl mb-2">◈</div>
-              <p className="font-mono text-pixel-gray/30 text-xs">NO PREVIEW</p>
-            </div>
+          <div className="absolute inset-0 grid-faint flex items-center justify-center">
+            <PixelIcon name="scroll" size={44} className="text-pixel-blue/25" />
           </div>
         )}
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-pixel-blue/0 group-hover:bg-pixel-blue/5 transition-all duration-300" />
-        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-          <span className="px-3 py-2 bg-bg-primary/85 border border-pixel-blue/40 font-pixel text-pixel-blue text-[8px] tracking-widest">
-            VIEW DETAIL ▸
+        <div className="absolute top-3 left-3 flex items-center gap-2">
+          <span className="flex items-center gap-1.5 px-2 py-1 bg-bg-primary/85 border border-yellow-400/40 font-pixel text-[8px] text-yellow-400 tracking-widest">
+            <PixelIcon name="star" size={10} />
+            FEATURED
           </span>
         </div>
-        <div className="absolute top-3 left-3 px-2 py-1 bg-bg-primary/80 border border-pixel-blue/30 font-pixel text-pixel-blue/60 text-[8px]">
+      </div>
+
+      {/* Body */}
+      <div className="p-6 flex flex-col justify-center">
+        <div className="flex items-center gap-3 mb-3">
+          <DifficultyTag difficulty={difficulty} />
+          <span className="font-mono text-[10px] text-pixel-gray/40">
+            QUEST #{String(project.id).padStart(2, '0')}
+          </span>
+        </div>
+        <h3 className="font-pixel text-pixel-white text-base leading-relaxed mb-3 group-hover:text-pixel-cyan transition-colors">
+          {project.title}
+        </h3>
+        <p className="font-mono text-pixel-gray/70 text-sm leading-relaxed mb-4 line-clamp-3">
+          {project.description}
+        </p>
+        {project.tags && project.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-5">
+            {project.tags.slice(0, 5).map(tag => <TagBadge key={tag} tag={tag} />)}
+          </div>
+        )}
+        <span className="inline-flex items-center gap-2 font-pixel text-[9px] text-pixel-cyan/80 group-hover:text-pixel-cyan tracking-widest">
+          OPEN QUEST LOG
+          <PixelIcon name="arrowRight" size={12} />
+        </span>
+      </div>
+    </motion.div>
+  )
+}
+
+/* ── Standard quest card ─────────────────────────────────────────────── */
+function QuestCard({ project, index, onOpen }: { project: Project; index: number; onOpen: () => void }) {
+  const difficulty = getDifficulty(project)
+
+  return (
+    <motion.div
+      variants={slideIn('left', 24)}
+      onClick={onOpen}
+      role="link"
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter') onOpen() }}
+      className="group relative border border-pixel-blue/15 bg-bg-card/40 hover:border-pixel-blue/40 hover:bg-bg-hover/50 transition-colors duration-300 overflow-hidden cursor-pointer outline-none focus-visible:border-pixel-blue/70 flex flex-col"
+      style={{ clipPath: 'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))' }}
+    >
+      {/* Thumbnail */}
+      <div className="relative h-40 overflow-hidden bg-bg-primary border-b border-pixel-blue/10 shrink-0">
+        {project.thumbnail ? (
+          <img
+            src={project.thumbnail}
+            alt={project.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="absolute inset-0 grid-faint flex items-center justify-center">
+            <PixelIcon name="scroll" size={34} className="text-pixel-blue/20" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-pixel-blue/0 group-hover:bg-pixel-blue/5 transition-colors" />
+        <div className="absolute top-2.5 left-2.5 px-2 py-1 bg-bg-primary/85 border border-pixel-blue/30 font-pixel text-pixel-blue/70 text-[8px]">
           #{String(index + 1).padStart(2, '0')}
+        </div>
+        <div className="absolute bottom-2.5 right-2.5">
+          <DifficultyTag difficulty={difficulty} />
         </div>
       </div>
 
       {/* Content */}
-      <div className="p-5">
-        <h3 className="font-sans font-bold text-lg text-pixel-white mb-2 group-hover:text-pixel-blue transition-colors line-clamp-1">
+      <div className="p-5 flex flex-col flex-1">
+        <h3 className="font-pixel text-pixel-white text-xs leading-relaxed mb-2 group-hover:text-pixel-cyan transition-colors line-clamp-2">
           {project.title}
         </h3>
-        <p className="font-sans text-pixel-gray/70 text-sm leading-relaxed mb-4 line-clamp-3">
+        <p className="font-mono text-pixel-gray/70 text-xs leading-relaxed mb-4 line-clamp-3 flex-1">
           {project.description}
         </p>
 
-        {/* Tags */}
         {project.tags && project.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-4">
-            {project.tags.slice(0, 4).map(tag => (
-              <TagBadge key={tag} tag={tag} />
-            ))}
+            {project.tags.slice(0, 4).map(tag => <TagBadge key={tag} tag={tag} />)}
           </div>
         )}
 
-        {/* Links */}
-        {project.links && project.links.length > 0 && (
-          <div className="flex items-center gap-3 pt-3 border-t border-pixel-blue/10">
-            {project.links.map(link => (
-              <a
-                key={link.type}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 font-mono text-xs text-pixel-gray hover:text-pixel-blue transition-colors group/link"
-              >
-                {link.type === 'github' ? (
-                  <FiGithub className="text-sm group-hover/link:scale-110 transition-transform" />
-                ) : (
-                  <FiExternalLink className="text-sm group-hover/link:scale-110 transition-transform" />
-                )}
-                <span className="capitalize">{link.type === 'github' ? 'Source' : 'Live Demo'}</span>
-              </a>
-            ))}
-          </div>
-        )}
+        <div className="flex items-center justify-between pt-3 border-t border-pixel-blue/10 mt-auto">
+          <span className="font-pixel text-[8px] text-pixel-gray/40 tracking-widest">OPEN ▸</span>
+          {project.links && project.links.length > 0 && (
+            <div className="flex items-center gap-3">
+              {project.links.slice(0, 2).map(link => (
+                <a
+                  key={link.type}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  className="text-pixel-gray/50 hover:text-pixel-cyan transition-colors"
+                  aria-label={link.type === 'github' ? 'Source code' : 'Live demo'}
+                >
+                  <PixelIcon name={link.type === 'github' ? 'external' : 'bolt'} size={13} />
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-
-      {/* Corner accent */}
-      <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-pixel-blue/30 group-hover:border-pixel-blue/60 transition-colors" />
-      <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-pixel-blue/15 group-hover:border-pixel-blue/40 transition-colors" />
     </motion.div>
   )
 }
@@ -137,7 +194,9 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
 export default function Projects() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
-  const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.1 })
+  const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.08 })
+  const navigate = useNavigate()
+  const { record } = useAchievements()
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -153,64 +212,79 @@ export default function Projects() {
     fetchProjects()
   }, [])
 
+  // Opening a quest log counts toward QUEST COMPLETE (3 opens).
+  const openQuest = (project: Project) => {
+    record('projects_opened', 3, 'quest_complete')
+    navigate(`/projects/${slugifyTitle(project.title)}`)
+  }
+
+  const [featured, ...rest] = projects
+
   return (
     <section id="projects" className="relative py-28 overflow-hidden">
-      <div className="absolute inset-0 grid-overlay opacity-50 pointer-events-none" />
+      <div className="absolute inset-0 grid-faint opacity-60 pointer-events-none" />
 
       <div ref={ref} className="max-w-6xl mx-auto px-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
-          className="mb-16"
-        >
-          <p className="section-tag mb-3">// 02. projects</p>
-          <div className="flex items-end gap-4 flex-wrap">
-            <h2 className="font-sans font-bold text-4xl md:text-5xl text-pixel-white">
-              My <span className="gradient-text">Creations</span>
-            </h2>
-            <span className="font-mono text-pixel-gray/40 text-sm mb-1">
-              [{projects.length} quests completed]
-            </span>
-          </div>
-          <div className="section-divider max-w-xs mt-4" />
-        </motion.div>
+        <ZoneHeader
+          variant="banner"
+          index="03"
+          tag="QUEST BOARD"
+          title="Quest"
+          accent="Board"
+          icon="scroll"
+          meta={loading ? undefined : `[${projects.length} quests available]`}
+          subtitle="Pick a quest to inspect the full log, screenshots and source."
+        />
 
-        {/* Grid */}
         {loading ? (
           <div className="flex items-center justify-center py-24">
             <FiLoader className="text-pixel-blue text-2xl animate-spin mr-3" />
-            <span className="font-mono text-pixel-gray text-sm">Loading projects...</span>
+            <span className="font-mono text-pixel-gray text-sm">Loading quest board...</span>
           </div>
         ) : projects.length === 0 ? (
           <div className="text-center py-24 border border-pixel-blue/10">
-            <p className="font-pixel text-pixel-gray/30 text-xs">NO PROJECTS FOUND</p>
+            <p className="font-pixel text-pixel-gray/30 text-xs">NO QUESTS POSTED</p>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project, index) => (
-              <ProjectCard key={project.id} project={project} index={index} />
-            ))}
-          </div>
+          <motion.div
+            variants={stagger(0.12)}
+            initial="hidden"
+            animate={inView ? 'show' : 'hidden'}
+            className="space-y-6"
+          >
+            <FeaturedQuest project={featured} onOpen={() => openQuest(featured)} />
+
+            {rest.length > 0 && (
+              <motion.div variants={stagger(0.09)} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {rest.map((project, index) => (
+                  <QuestCard
+                    key={project.id}
+                    project={project}
+                    index={index + 1}
+                    onOpen={() => openQuest(project)}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </motion.div>
         )}
 
-        {/* View all on GitHub */}
+        {/* Footer CTA */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 1 } : {}}
-          transition={{ delay: 0.5 }}
+          variants={scalePop}
+          initial="hidden"
+          whileInView="show"
+          viewport={VIEWPORT}
+          transition={{ duration: DUR.slow, ease: EASE.back, delay: 0.15 }}
           className="mt-12 flex justify-center"
         >
-          <a
-            href="https://github.com/rillToMe"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-pixel inline-flex items-center gap-2 text-sm"
+          <PixelButton
+            variant="ghost"
+            icon="external"
+            href={`https://github.com/${SITE.githubUser}`}
           >
-            <FiGithub />
-            View All on GitHub
-          </a>
+            VIEW ALL REPOSITORIES
+          </PixelButton>
         </motion.div>
       </div>
     </section>
