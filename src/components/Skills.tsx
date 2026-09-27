@@ -455,7 +455,7 @@ export default function Skills() {
             height={canvasSize.h}
             onMouseMove={handleMouseMove}
             onMouseLeave={() => setHoveredSkill(null)}
-            style={{ width: '100%', height: canvasSize.h, cursor: hoveredSkill ? 'crosshair' : 'default', display: 'block' }}
+            style={{ width: '100%', height: canvasSize.h, cursor: hoveredSkill ? 'var(--cur-precision), crosshair' : 'var(--cur-normal), default', display: 'block' }}
           />
           <AnimatePresence>
             {hovered && (() => {

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
+import { useNavigate } from 'react-router-dom'
 import { FiGithub, FiExternalLink, FiLoader } from 'react-icons/fi'
 import { projectsAPI } from '../services/api'
+import { slugifyTitle } from '../utils/slug'
 import type { Project } from '../types/api'
 
 const FALLBACK_PROJECTS: Project[] = [
@@ -32,14 +34,28 @@ interface ProjectCardProps {
 
 const ProjectCard = ({ project, index }: ProjectCardProps) => {
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.1 })
+  const navigate = useNavigate()
+
+  const openDetail = () => navigate(`/projects/${slugifyTitle(project.title)}`)
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') openDetail()
+  }
 
   return (
     <motion.div
       ref={ref}
+      role="link"
+      tabIndex={0}
+      onClick={(e) => {
+        // Don't hijack clicks on the GitHub/Demo anchor links inside the card.
+        if ((e.target as HTMLElement).closest('a')) return
+        openDetail()
+      }}
+      onKeyDown={handleKeyDown}
       initial={{ opacity: 0, y: 40 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.6, delay: index * 0.1, ease: 'easeOut' }}
-      className="group relative border border-pixel-blue/15 bg-bg-card/40 hover:border-pixel-blue/40 hover:bg-bg-hover/50 transition-all duration-300 overflow-hidden"
+      className="group relative border border-pixel-blue/15 bg-bg-card/40 hover:border-pixel-blue/40 hover:bg-bg-hover/50 transition-all duration-300 overflow-hidden cursor-pointer outline-none focus-visible:border-pixel-blue/70"
       style={{ clipPath: 'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))' }}
     >
       {/* Thumbnail */}
@@ -60,6 +76,11 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
         )}
         {/* Hover overlay */}
         <div className="absolute inset-0 bg-pixel-blue/0 group-hover:bg-pixel-blue/5 transition-all duration-300" />
+        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+          <span className="px-3 py-2 bg-bg-primary/85 border border-pixel-blue/40 font-pixel text-pixel-blue text-[8px] tracking-widest">
+            VIEW DETAIL ▸
+          </span>
+        </div>
         <div className="absolute top-3 left-3 px-2 py-1 bg-bg-primary/80 border border-pixel-blue/30 font-pixel text-pixel-blue/60 text-[8px]">
           #{String(index + 1).padStart(2, '0')}
         </div>

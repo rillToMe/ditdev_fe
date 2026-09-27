@@ -15,6 +15,7 @@ import About             from './components/About'
 
 const Projects = lazy(() => import('./components/Projects'))
 const Certificates = lazy(() => import('./components/Certificates'))
+const ProjectDetail = lazy(() => import('./components/ProjectDetail'))
 
 const preloadProjects = () => import('./components/Projects')
 const preloadCertificates = () => import('./components/Certificates')
@@ -69,7 +70,17 @@ function SEO() {
 }
 
 function Portfolio() {
-  const [loaded, setLoaded] = useState(false)
+  // Intro plays once per browser session. `loaded` lives in sessionStorage so it
+  // survives Portfolio remounting on route changes (e.g. returning from a
+  // project detail page) — otherwise the game intro replays every time.
+  const [loaded, setLoaded] = useState(
+    () => sessionStorage.getItem('ditdev_intro_seen') === '1',
+  )
+
+  const handleIntroComplete = () => {
+    sessionStorage.setItem('ditdev_intro_seen', '1')
+    setLoaded(true)
+  }
 
   const preloadRef = useRef<HTMLDivElement>(null)
 
@@ -104,7 +115,7 @@ function Portfolio() {
           opacity: 0.4,
         }}
       />
-      {!loaded && <GameLoadingScreen onComplete={() => setLoaded(true)} />}
+      {!loaded && <GameLoadingScreen onComplete={handleIntroComplete} />}
       <div className={`transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <Navbar />
         <main className="relative z-10">
@@ -149,6 +160,7 @@ export default function App() {
           <Suspense fallback={null}>
             <Routes>
               <Route path="/" element={<Portfolio />} />
+              <Route path="/projects/:nameprojects" element={<ProjectDetail />} />
               <Route path="/admin" element={<AdminApp />} />
               <Route path="/admin/*" element={<AdminApp />} />
               <Route path="*" element={<NotFound />} />

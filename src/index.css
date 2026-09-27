@@ -322,3 +322,279 @@
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
+
+/* ── Long-form markdown (project overview) ────────────── */
+.md-body {
+  color: var(--pixel-gray);
+  font-size: 0.95rem;
+  line-height: 1.85;
+  word-wrap: break-word;
+}
+
+.md-body > *:first-child {
+  margin-top: 0;
+}
+
+.md-body h1,
+.md-body h2,
+.md-body h3,
+.md-body h4,
+.md-body h5,
+.md-body h6 {
+  color: var(--pixel-white);
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 1.6em 0 0.6em;
+}
+
+.md-body h1 { font-size: 1.6rem; }
+.md-body h2 { font-size: 1.3rem; }
+.md-body h3 { font-size: 1.1rem; }
+.md-body h4 { font-size: 1rem; }
+
+.md-body h2::before {
+  content: '▸ ';
+  color: var(--pixel-cyan);
+}
+
+.md-body p {
+  margin: 0.7em 0;
+}
+
+.md-body a {
+  color: var(--pixel-cyan);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s;
+}
+
+.md-body a:hover {
+  color: var(--pixel-blue);
+}
+
+.md-body strong {
+  color: var(--pixel-white);
+  font-weight: 700;
+}
+
+.md-body em {
+  color: var(--pixel-cyan);
+}
+
+.md-body ul,
+.md-body ol {
+  margin: 0.7em 0;
+  padding-left: 1.6em;
+}
+
+.md-body ul { list-style: '▸  '; }
+.md-body ol { list-style: decimal; }
+
+.md-body li {
+  margin: 0.35em 0;
+  padding-left: 0.25em;
+}
+
+.md-body li::marker {
+  color: rgba(79, 140, 255, 0.7);
+}
+
+.md-body input[type='checkbox'] {
+  accent-color: var(--pixel-cyan);
+  margin-right: 0.5em;
+}
+
+.md-body blockquote {
+  border-left: 2px solid rgba(0, 212, 255, 0.5);
+  margin: 1em 0;
+  padding: 0.4em 1em;
+  background: rgba(79, 140, 255, 0.05);
+  color: rgba(232, 234, 246, 0.75);
+  font-style: italic;
+}
+
+.md-body code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  background: rgba(79, 140, 255, 0.12);
+  border: 1px solid rgba(79, 140, 255, 0.2);
+  color: var(--pixel-cyan);
+  padding: 0.1em 0.4em;
+}
+
+.md-body pre {
+  background: #060a14;
+  border: 1px solid rgba(79, 140, 255, 0.2);
+  padding: 1em;
+  overflow-x: auto;
+  margin: 1em 0;
+  border-radius: 0;
+}
+
+.md-body pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: rgba(0, 212, 255, 0.9);
+  font-size: 0.85rem;
+  line-height: 1.7;
+  white-space: pre;
+}
+
+.md-body img {
+  max-width: 100%;
+  border: 1px solid rgba(79, 140, 255, 0.25);
+}
+
+.md-body hr {
+  border: none;
+  height: 1px;
+  margin: 2em 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(79, 140, 255, 0.5),
+    rgba(0, 212, 255, 0.4),
+    transparent
+  );
+}
+
+.md-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}
+
+.md-body th,
+.md-body td {
+  border: 1px solid rgba(79, 140, 255, 0.2);
+  padding: 0.5em 0.8em;
+  text-align: left;
+}
+
+.md-body th {
+  background: rgba(79, 140, 255, 0.1);
+  color: var(--pixel-blue);
+  font-weight: 700;
+}
+
+/* ── CHANGLI cursor pack ───────────────────────────────────────
+   Serves the .cur files from /public/changli_cursor over the whole
+   site. Hotspots mirror the values embedded in each .cur file, so
+   the pointer lands on the same spot as the native Windows scheme.
+
+   Pack mapping (from changli_cursor/install.inf):
+     Normal       → default arrow
+     Link         → pointer / clickable
+     Text         → text caret (inputs, textareas)
+     Unavailable  → disabled / not-allowed
+     Help         → help
+     Busy         → wait
+     Working      → progress
+     Move         → move
+     Precision    → crosshair
+     Vertical     → ns-resize     Horizontal → ew-resize
+     Diagonal2    → ne/sw-resize  Diagonal1 → nw/se-resize
+   (Alternate, Person, Handwriting & Pin have no CSS equivalents
+   and are only used by the Windows install.inf.)
+*/
+:root {
+  --cur-normal: url('/changli_cursor/Normal.cur') 0 0;
+  --cur-link: url('/changli_cursor/Link.cur') 4 0;
+  --cur-text: url('/changli_cursor/Text.cur') 4 9;
+  --cur-unavailable: url('/changli_cursor/Unavailable.cur') 0 0;
+  --cur-help: url('/changli_cursor/Help.cur') 0 0;
+  --cur-busy: url('/changli_cursor/Busy.cur') 15 15;
+  --cur-working: url('/changli_cursor/Working.cur') 0 0;
+  --cur-move: url('/changli_cursor/Move.cur') 15 15;
+  --cur-precision: url('/changli_cursor/Precision.cur') 5 6;
+  --cur-vertical: url('/changli_cursor/Vertical.cur') 15 15;
+  --cur-horizontal: url('/changli_cursor/Horizontal.cur') 15 15;
+  --cur-diagonal1: url('/changli_cursor/Diagonal1.cur') 15 15;
+  --cur-diagonal2: url('/changli_cursor/Diagonal2.cur') 15 15;
+}
+
+/* Default arrow everywhere (overrides Tailwind's layered cursor
+   utilities: unlayered rules always win over @layer utilities). */
+:root,
+* {
+  cursor: var(--cur-normal), auto;
+}
+
+/* Clickable elements → Changli hand. :where() keeps specificity at
+   0, and !important makes sure earlier unlayered rules such as
+   `.btn-pixel { cursor: pointer }` can't leak the native cursor. */
+:where(a[href], area[href], button, input[type='submit' i], input[type='reset' i], input[type='button' i], [role='button'], [role='link'], [role='tab'], [role='menuitem'], .cursor-pointer, .btn-pixel) {
+  cursor: var(--cur-link), pointer !important;
+}
+
+/* Editable text → Changli text caret. */
+:where(input:not([type='button' i]):not([type='reset' i]):not([type='submit' i]):not([type='checkbox' i]):not([type='radio' i]):not([type='file' i]):not([type='range' i]), textarea, [contenteditable='true' i], .cursor-text) {
+  cursor: var(--cur-text), text !important;
+}
+
+/* NOTE: do NOT add a :focus override here. Forcing the native
+   `text` cursor while a field is focused makes the pointer snap
+   back to the default the moment you click into any input/textarea
+   (the "NEW MESSAGE" and "Ask the guide..." fields), defeating the
+   whole Changli cursor pack. The rule above already keeps the
+   custom text cursor for both hover and focus. */
+
+/* Disabled / forbidden → Changli not-allowed. Same specificity
+   boost so it beats the pointer rule for disabled controls. */
+:is(:disabled, [disabled], [aria-disabled='true'], .cursor-not-allowed) {
+  cursor: var(--cur-unavailable), not-allowed !important;
+}
+
+/* Less common states, driven by Tailwind's cursor-* utilities. */
+.cursor-help {
+  cursor: var(--cur-help), help;
+}
+.cursor-wait {
+  cursor: var(--cur-busy), wait;
+}
+.cursor-progress {
+  cursor: var(--cur-working), progress;
+}
+.cursor-move,
+.cursor-all-scroll,
+.cursor-grab,
+.cursor-grabbing {
+  cursor: var(--cur-move), grab;
+}
+.cursor-crosshair {
+  cursor: var(--cur-precision), crosshair;
+}
+.cursor-n-resize,
+.cursor-s-resize,
+.cursor-ns-resize,
+.cursor-row-resize {
+  cursor: var(--cur-vertical), ns-resize;
+}
+.cursor-e-resize,
+.cursor-w-resize,
+.cursor-ew-resize,
+.cursor-col-resize {
+  cursor: var(--cur-horizontal), ew-resize;
+}
+.cursor-ne-resize,
+.cursor-sw-resize,
+.cursor-nesw-resize {
+  cursor: var(--cur-diagonal2), nesw-resize;
+}
+.cursor-nw-resize,
+.cursor-se-resize,
+.cursor-nwse-resize {
+  cursor: var(--cur-diagonal1), nwse-resize;
+}
+
+/* No Changli zoom art exists in the pack — keep the native
+   magnifier so the click-to-zoom affordance stays clear. */
+.cursor-zoom-in {
+  cursor: zoom-in;
+}
+.cursor-zoom-out {
+  cursor: zoom-out;
+}

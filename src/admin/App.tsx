@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import api from './services/api'
-import { ThemeProvider } from './contexts/ThemeContext'
 import type { Admin } from '../types/api'
 
 function LoadingScreen() {
@@ -80,9 +79,5 @@ function AdminApp() {
 }
 
 export default function App() {
-  return (
-    <ThemeProvider>
-      <AdminApp />
-    </ThemeProvider>
-  )
+  return <AdminApp />
 }

@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogOut, FolderOpen, Award, Sun, Moon, Monitor, UserPlus, TrendingUp, RefreshCw, Database } from 'lucide-react'
-import { Menu } from '@headlessui/react'
+import { LogOut, FolderOpen, Award, TrendingUp, RefreshCw, Database } from 'lucide-react'
 import api from '../services/api'
-import { useTheme } from '../contexts/ThemeContext'
 import type { Admin, Certificate, Project, Stat } from '../../types/api'
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -11,7 +9,6 @@ import ProjectsManager from '../components/ProjectsManager'
 import CertificatesManager from '../components/CertificatesManager'
 import StatsManager from '../components/StatsManager'
 import RagManager from '../components/RagManager'
-import RegisterAdmin from '../components/RegisterAdmin'
 
 const pixelClip = 'polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%)'
 
@@ -135,8 +132,6 @@ export default function Dashboard({ admin, onLogout }: DashboardProps) {
   const [stats, setStats] = useState<Stat[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [showRegister, setShowRegister] = useState(false)
-  const { theme, changeTheme } = useTheme()
 
   useEffect(() => { loadData() }, [])
 
@@ -170,9 +165,6 @@ export default function Dashboard({ admin, onLogout }: DashboardProps) {
       setRefreshing(false)
     }
   }
-
-  const themeIcons: Record<string, LucideIcon> = { light: Sun, dark: Moon, system: Monitor }
-  const ThemeIcon = themeIcons[theme]
 
   return (
     <motion.div
@@ -208,52 +200,6 @@ export default function Dashboard({ admin, onLogout }: DashboardProps) {
             <IconBtn onClick={handleRefresh} disabled={refreshing} title="Refresh Data">
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-[#4f8cff]' : ''}`} />
             </IconBtn>
-
-            {/* Theme switcher */}
-            <Menu as="div" className="relative">
-              <Menu.Button as={motion.button}
-                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                className="p-2 transition-all duration-200"
-                style={{ background: 'rgba(79,140,255,0.05)', border: '1px solid rgba(79,140,255,0.12)', clipPath: pixelClip, color: 'rgba(148,163,184,0.6)' }}
-              >
-                <ThemeIcon className="w-4 h-4" />
-              </Menu.Button>
-              <Menu.Items
-                className="absolute right-0 mt-2 w-44 py-1 z-50"
-                style={{ background: '#0d1220', border: '1px solid rgba(79,140,255,0.15)', clipPath: 'polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%)' }}
-              >
-                {['light', 'dark', 'system'].map(t => {
-                  const Icon = themeIcons[t]
-                  return (
-                    <Menu.Item key={t}>
-                      {({ active }) => (
-                        <button
-                          onClick={() => changeTheme(t as 'light' | 'dark' | 'system')}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 font-pixel text-[9px] tracking-widest transition-colors"
-                          style={{ color: theme === t ? '#4f8cff' : active ? 'rgba(148,163,184,0.8)' : 'rgba(148,163,184,0.4)', background: active ? 'rgba(79,140,255,0.05)' : 'transparent' }}
-                        >
-                          <Icon className="w-3.5 h-3.5" />
-                          {t.toUpperCase()}
-                        </button>
-                      )}
-                    </Menu.Item>
-                  )
-                })}
-              </Menu.Items>
-            </Menu>
-
-            {/* Add Admin */}
-            <motion.button
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              onClick={() => setShowRegister(true)}
-              className="hidden sm:flex items-center gap-2 px-4 py-2 font-pixel text-[10px] tracking-widest transition-all duration-200"
-              style={{ background: 'rgba(0,212,255,0.06)', border: '1px solid rgba(0,212,255,0.2)', color: '#00d4ff', clipPath: pixelClip }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,212,255,0.12)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0,212,255,0.06)'}
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              ADD ADMIN
-            </motion.button>
 
             {/* Logout */}
             <motion.button
@@ -335,8 +281,6 @@ export default function Dashboard({ admin, onLogout }: DashboardProps) {
         </motion.div>
       </div>
 
-      {/* Register modal */}
-      {showRegister && <RegisterAdmin onClose={() => setShowRegister(false)} />}
     </motion.div>
   )
 }

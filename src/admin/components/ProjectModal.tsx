@@ -55,7 +55,9 @@ const LINK_TYPES: { value: string; label: string; Icon: IconType; color: string 
 interface ProjectFormData {
   title: string
   description: string
+  content: string
   thumbnail: string
+  screenshots: string[]
   tags: string[]
   links: ProjectLink[]
 }
@@ -90,12 +92,15 @@ export default function ProjectModal({ project, onClose, onSuccess }: ProjectMod
   const [formData, setFormData] = useState<ProjectFormData>({
     title: project?.title || '',
     description: project?.description || '',
+    content: project?.content || '',
     thumbnail: project?.thumbnail || '',
+    screenshots: project?.screenshots || [],
     tags: project?.tags || [],
     links: project?.links || [],
   })
   const [tagInput, setTagInput] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [uploadingShots, setUploadingShots] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const [imageToCrop, setImageToCrop] = useState<string | null>(null)
@@ -111,7 +116,9 @@ export default function ProjectModal({ project, onClose, onSuccess }: ProjectMod
       return (
         formData.title !== (project?.title || '') ||
         formData.description !== (project?.description || '') ||
+        formData.content !== (project?.content || '') ||
         formData.thumbnail !== (project?.thumbnail || '') ||
+        JSON.stringify(formData.screenshots) !== JSON.stringify(project?.screenshots || []) ||
         JSON.stringify(formData.tags) !== JSON.stringify(project?.tags || []) ||
         JSON.stringify(formData.links) !== JSON.stringify(project?.links || [])
       )
@@ -120,7 +127,9 @@ export default function ProjectModal({ project, onClose, onSuccess }: ProjectMod
     return (
       formData.title.trim() !== '' ||
       formData.description.trim() !== '' ||
+      formData.content.trim() !== '' ||
       formData.thumbnail !== '' ||
+      formData.screenshots.length > 0 ||
       formData.tags.length > 0 ||
       formData.links.length > 0
     )
@@ -144,11 +153,46 @@ export default function ProjectModal({ project, onClose, onSuccess }: ProjectMod
     try { await api.deleteImage(filename, 'projects') } catch { /* ignore */ }
   }
 
-  // Confirmed discard — delete uploaded file from R2 if new (not pre-existing)
+  // Same idea for gallery screenshots: only newly-uploaded shots are cleaned up
+  // here. Pre-existing ones are left for the backend, which diffs on save.
+  const dropShot = async (url: string) => {
+    if (!url || (project?.screenshots || []).includes(url)) return
+    const filename = url.split('/').pop()
+    if (!filename) return
+    try { await api.deleteImage(filename, 'projects') } catch { /* ignore */ }
+  }
+
+  // Confirmed discard — delete uploaded files from R2 if new (not pre-existing)
   const handleConfirmDiscard = async () => {
     await dropUpload(formData.thumbnail)
+    for (const shot of formData.screenshots) await dropShot(shot)
     setShowDiscard(false)
     onClose()
+  }
+
+  const removeScreenshot = (i: number) => {
+    const shot = formData.screenshots[i]
+    setFormData(prev => ({ ...prev, screenshots: prev.screenshots.filter((_, idx) => idx !== i) }))
+    if (shot) dropShot(shot)
+  }
+
+  const handleShotsSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    e.target.value = '' // allow re-selecting the same file
+    if (files.length === 0) return
+    setUploadingShots(true)
+    try {
+      const added: string[] = []
+      for (const file of files) {
+        const data = await api.uploadImage(file, 'projects')
+        added.push(data.data.path)
+      }
+      setFormData(prev => ({ ...prev, screenshots: [...prev.screenshots, ...added] }))
+    } catch (err) {
+      alert('Upload failed: ' + (err instanceof Error ? err.message : err))
+    } finally {
+      setUploadingShots(false)
+    }
   }
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -296,6 +340,21 @@ export default function ProjectModal({ project, onClose, onSuccess }: ProjectMod
                 />
               </Field>
 
+              {/* Overview (markdown) */}
+              <Field label="Overview (Markdown)" delay={0.12}>
+                <textarea
+                  value={formData.content}
+                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                  className={S.input + ' resize-y'}
+                  style={{ clipPath: 'none' }}
+                  rows={10}
+                  placeholder={"Long-form overview shown on the project page.\nSupports markdown: # headings, **bold**, - lists, ```code```, etc."}
+                />
+                <p className="mt-1.5 font-mono text-[10px] text-[rgba(148,163,184,0.35)]">
+                  shown on the public project page · markdown supported
+                </p>
+              </Field>
+
               {/* Thumbnail */}
               <Field label="Thumbnail" delay={0.15}>
                 <div className="space-y-3">
@@ -353,6 +412,67 @@ export default function ProjectModal({ project, onClose, onSuccess }: ProjectMod
                       <div className="absolute top-0 right-0 w-4 h-4 bg-[#4f8cff]/20 border-l border-b border-[#4f8cff]/30" />
                     </motion.div>
                   )}
+                </div>
+              </Field>
+
+              {/* Screenshots */}
+              <Field label="Screenshots" delay={0.18}>
+                <div className="space-y-3">
+                  {/* Gallery grid */}
+                  {formData.screenshots.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <AnimatePresence>
+                        {formData.screenshots.map((shot, i) => (
+                          <motion.div
+                            key={shot}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="relative group overflow-hidden"
+                            style={{ clipPath: pixelClip }}
+                          >
+                            <img src={getImageUrl(shot) || undefined} alt={`Screenshot ${i + 1}`}
+                              className="w-full h-20 object-cover" />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <button type="button" onClick={() => removeScreenshot(i)}
+                                title="Remove screenshot"
+                                className="p-1.5 bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/40 transition">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  )}
+
+                  {/* Upload button */}
+                  <label
+                    className="flex items-center gap-2 px-4 py-3 cursor-pointer transition-all duration-200 group"
+                    style={{
+                      background: 'rgba(0,212,255,0.05)',
+                      border: '1px dashed rgba(0,212,255,0.22)',
+                      clipPath: pixelClip,
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,212,255,0.1)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0,212,255,0.05)'}
+                  >
+                    {uploadingShots ? (
+                      <>
+                        <PixelSpinner color="#00d4ff" />
+                        <span className="font-pixel text-[10px] tracking-widest text-[rgba(0,212,255,0.7)]">UPLOADING...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 text-[rgba(0,212,255,0.7)]" />
+                        <span className="font-pixel text-[10px] tracking-widest text-[rgba(0,212,255,0.8)]">ADD_SCREENSHOT</span>
+                      </>
+                    )}
+                    <input type="file" accept="image/*" multiple onChange={handleShotsSelect} className="hidden" disabled={uploadingShots} />
+                  </label>
+                  <p className="font-mono text-[10px] text-[rgba(148,163,184,0.35)]">
+                    gallery images shown on the project page · multiple allowed
+                  </p>
                 </div>
               </Field>
 

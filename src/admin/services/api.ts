@@ -57,13 +57,6 @@ const api = {
     })
   },
 
-  register(credentials: LoginCredentials): Promise<ApiResponse<Admin>> {
-    return this.request<ApiResponse<Admin>>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    })
-  },
-
   logout(): Promise<ApiResponse> {
     return this.request('/auth/logout', {
       method: 'POST',

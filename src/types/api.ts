@@ -1,6 +1,3 @@
-// Data shapes mirroring the `ditdev_be_rust` (Axum) API.
-// All public list/get endpoints return `{ success, data, count?, message? }`.
-
 export interface ApiResponse<T = unknown> {
   success: boolean
   data?: T
@@ -8,7 +5,7 @@ export interface ApiResponse<T = unknown> {
   message?: string
 }
 
-// ── Projects ─────────────────────────────────────────
+// Projects 
 export interface ProjectLink {
   type: string
   url: string
@@ -18,8 +15,10 @@ export interface Project {
   id: number
   title: string
   description: string
+  content?: string
   thumbnail: string | null
   tags: string[] | null
+  screenshots?: string[] | null
   links: ProjectLink[] | null
   created_at: string
   updated_at: string
@@ -28,12 +27,14 @@ export interface Project {
 export interface ProjectInput {
   title?: string
   description?: string
+  content?: string
   thumbnail?: string
   tags?: string[]
+  screenshots?: string[]
   links?: ProjectLink[]
 }
 
-// ── Certificates ─────────────────────────────────────
+// Certificates 
 export interface Certificate {
   id: number
   title: string
@@ -54,7 +55,7 @@ export interface CertificateInput {
   pdf_file?: string
 }
 
-// ── Stats ────────────────────────────────────────────
+// Stats
 export interface Stat {
   id: number
   key: string
@@ -73,7 +74,7 @@ export interface StatInput {
   start_date?: string
 }
 
-// ── Auth ─────────────────────────────────────────────
+// Auth 
 export interface Admin {
   id: number
   username: string
@@ -91,14 +92,14 @@ export interface AuthResponse {
   expiresIn?: string | number
 }
 
-// ── Contact ──────────────────────────────────────────
+// Contact 
 export interface ContactMessage {
   name: string
   email: string
   message: string
 }
 
-// ── Chat (CHANGLI-AI) ────────────────────────────────
+// Chat (CHANGLI-AI)
 export type ChatRole = 'user' | 'assistant' | 'system'
 
 export interface ChatMessage {
@@ -114,7 +115,7 @@ export interface ChatResponse {
   usage?: unknown
 }
 
-// ── XP bar ───────────────────────────────────────────
+// XP bar
 export interface XpResponse {
   success: boolean
   total_xp: number
@@ -124,7 +125,7 @@ export interface XpResponse {
   gain?: number
 }
 
-// ── Upload ───────────────────────────────────────────
+// Upload 
 export interface UploadResponse {
   success: boolean
   message: string
@@ -136,7 +137,7 @@ export interface UploadResponse {
   }
 }
 
-// ── RAG admin ────────────────────────────────────────
+// RAG admin 
 export interface RagHealth {
   status?: string
   chunks?: number
