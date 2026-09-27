@@ -6,9 +6,13 @@ import type { ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import PixelIcon from '../components/systems/PixelIcon'
 import type { PixelIconName } from '../components/systems/PixelIcon'
+import { useAchievements } from '../components/systems/AchievementsProvider'
+import { SITE } from '../data/site'
+import { EASE } from '../lib/motion'
+import avatarImg from '../assets/img/icons/ai_icon.jpg'
 
-const IDLE_TIMEOUT      = 30_000
-const LONG_IDLE_TIMEOUT = 120_000
+const IDLE_TIMEOUT      = 300_000   // 5 minutes of inactivity → AFK overlay
+const LONG_IDLE_TIMEOUT = 420_000   // 7 minutes → extended-inactivity mode
 const SHAKE_THRESHOLD   = 800
 
 interface IdleMessage {
@@ -53,7 +57,7 @@ const LONG_IDLE_MESSAGES: IdleMessage[] = [
   },
   {
     title: 'System alert.',
-    body : 'Inactivity detected for 2+ minutes.\nThe guardian grows impatient.',
+    body : 'Inactivity detected for a while now.\nThe guardian grows impatient.',
     icon : 'skull',
   },
 ]
@@ -91,6 +95,59 @@ function Firefly() {
   )
 }
 
+/** mm:ss (or h:mm:ss past an hour) — the pause menu's session clock. */
+function formatClock(total: number) {
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`
+}
+
+/** Types a line out once, restarting whenever `text` changes. */
+function useTypedText(text: string, speed = 24) {
+  const [n, setN] = useState(0)
+  useEffect(() => { setN(0) }, [text])
+  useEffect(() => {
+    if (n >= text.length) return
+    const id = window.setTimeout(() => setN(v => v + 1), speed)
+    return () => window.clearTimeout(id)
+  }, [n, text, speed])
+  return text.slice(0, n)
+}
+
+function MenuRow({ icon, label, hint, onClick, active = false }: {
+  icon: PixelIconName
+  label: string
+  hint: string
+  onClick: () => void
+  active?: boolean
+}) {
+  return (
+    <motion.button
+      onClick={onClick}
+      whileHover={{ x: 4 }}
+      transition={{ duration: 0.12 }}
+      className="group w-full flex items-center gap-3 px-3 py-2.5 border border-pixel-blue/10 hover:border-pixel-cyan/40 hover:bg-pixel-cyan/5 transition-colors text-left"
+      style={{ clipPath: 'polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%)' }}
+    >
+      <span className={`font-mono text-pixel-cyan text-xs w-3 ${active ? 'animate-blink' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>▶</span>
+      <PixelIcon name={icon} size={12} className={active ? 'text-pixel-cyan' : 'text-pixel-blue/70'} />
+      <span className="font-pixel text-[10px] text-pixel-white/90 tracking-wider">{label}</span>
+      <span className="ml-auto font-mono text-[10px] text-pixel-gray/40 hidden sm:inline">{hint}</span>
+    </motion.button>
+  )
+}
+
+function StatCell({ label, value, accent }: { label: string; value: string | number; accent: string }) {
+  return (
+    <div className="bg-[#04070d] px-3 py-2.5">
+      <p className="font-mono text-[9px] text-pixel-gray/40 tracking-widest mb-1">{label}</p>
+      <p className={`font-pixel text-[11px] tabular-nums ${accent}`}>{value}</p>
+    </div>
+  )
+}
+
 interface AFKOverlayProps {
   isIdle: boolean
   isLongIdle: boolean
@@ -99,11 +156,13 @@ interface AFKOverlayProps {
 }
 
 function AFKOverlay({ isIdle, isLongIdle, onWake, konamiActive }: AFKOverlayProps) {
-  const [msgIndex,   setMsgIndex]   = useState(0)
-  const [blink,      setBlink]      = useState(true)
-  const [wakeMsg,    setWakeMsg]    = useState<string | null>(null)
-  const [showWake,   setShowWake]   = useState(false)
+  const { xp, unlockedCount, total, mapProgress } = useAchievements()
+  const [msgIndex, setMsgIndex] = useState(0)
+  const [secs,     setSecs]     = useState(0)
+  const [wakeMsg,  setWakeMsg]  = useState<string | null>(null)
+  const [showWake, setShowWake] = useState(false)
 
+  // Rotate Changli's line while the player is away.
   useEffect(() => {
     if (!isIdle) return
     setMsgIndex(Math.floor(Math.random() * IDLE_MESSAGES.length))
@@ -113,10 +172,13 @@ function AFKOverlay({ isIdle, isLongIdle, onWake, konamiActive }: AFKOverlayProp
     return () => clearInterval(id)
   }, [isIdle])
 
+  // Live idle clock — resets the moment the player wakes.
   useEffect(() => {
-    const id = setInterval(() => setBlink(b => !b), 600)
+    if (!isIdle) { setSecs(0); return }
+    setSecs(0)
+    const id = setInterval(() => setSecs(s => s + 1), 1000)
     return () => clearInterval(id)
-  }, [])
+  }, [isIdle])
 
   const handleWake = useCallback(() => {
     const msg = WAKEUP_MESSAGES[Math.floor(Math.random() * WAKEUP_MESSAGES.length)]
@@ -127,8 +189,16 @@ function AFKOverlay({ isIdle, isLongIdle, onWake, konamiActive }: AFKOverlayProp
 
   const pool    = isLongIdle ? LONG_IDLE_MESSAGES : IDLE_MESSAGES
   const current = pool[msgIndex % pool.length]
+  const typed   = useTypedText(current.body)
 
   const fireflies = Array.from({ length: 18 }, (_, i) => i)
+  const clock  = formatClock(secs)
+  const mapPct = Math.round(mapProgress * 100)
+
+  const returnTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    handleWake()
+  }
 
   return (
     <AnimatePresence>
@@ -138,113 +208,173 @@ function AFKOverlay({ isIdle, isLongIdle, onWake, konamiActive }: AFKOverlayProp
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 1.2 }}
+          transition={{ duration: 0.6 }}
           className="fixed inset-0 z-[9998] cursor-pointer overflow-hidden"
           onClick={handleWake}
-          style={{ background: 'rgba(5, 7, 15, 0.88)', backdropFilter: 'blur(2px)' }}
+          style={{ background: 'rgba(5, 7, 15, 0.9)', backdropFilter: 'blur(3px)' }}
         >
           {/* Fireflies */}
           {fireflies.map(id => <Firefly key={id} />)}
 
           {/* Scanlines */}
-          <div className="absolute inset-0 pointer-events-none opacity-20"
-            style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.2) 3px, rgba(0,0,0,0.2) 4px)' }} />
+          <div className="absolute inset-0 pointer-events-none opacity-[0.18]"
+            style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.5) 3px, rgba(0,0,0,0.5) 4px)' }} />
 
-          {/* Center content */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
+          {/* Vignette */}
+          <div className="absolute inset-0 pointer-events-none"
+            style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 45%, transparent 40%, rgba(0,0,0,0.7) 100%)' }} />
 
-            {/* Konami easter egg mode */}
-            <AnimatePresence>
-              {konamiActive && (
-                <motion.div
-                  initial={{ scale: 0, rotate: -10 }}
-                  animate={{ scale: 1, rotate: 0   }}
-                  exit={{ scale: 0 }}
-                  className="absolute top-12 left-1/2 -translate-x-1/2 text-center"
-                >
-                  <p className="font-pixel text-yellow-400 text-sm">KONAMI CODE ACTIVATED</p>
-                  <p className="font-mono text-yellow-400/60 text-xs mt-1">+99 RESPECT POINTS</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* CHANGLI-AI card */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={current.title}
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0,  scale: 1    }}
-                exit={{ opacity: 0, y: -10, scale: 0.97   }}
-                transition={{ duration: 0.5 }}
-                className="flex flex-col items-center gap-4"
-              >
-                {/* Icon */}
-                <motion.div
-                  animate={{ y: [0, -8, 0] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                  className="text-pixel-cyan"
-                >
-                  <PixelIcon name={current.icon} size={36} />
-                </motion.div>
-
-                {/* Dialog box */}
-                <div
-                  className="px-8 py-5 max-w-sm text-center"
-                  style={{
-                    background : 'rgba(10,14,26,0.95)',
-                    border     : '1px solid rgba(79,140,255,0.2)',
-                    clipPath   : 'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))',
-                    boxShadow  : '0 0 40px rgba(79,140,255,0.08)',
-                  }}
-                >
-                  {/* Header */}
-                  <div className="flex items-center justify-center gap-2 mb-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                    <p className="font-pixel text-pixel-cyan text-[9px] tracking-widest">CHANGLI-AI</p>
-                  </div>
-
-                  <p className="font-pixel text-pixel-white text-sm mb-2 leading-relaxed">
-                    {current.title}
-                  </p>
-                  <p className="font-mono text-pixel-gray/60 text-xs leading-relaxed whitespace-pre-line">
-                    {current.body}
-                  </p>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Press any key */}
-            <motion.p
-              animate={{ opacity: blink ? 0.6 : 0.15 }}
-              transition={{ duration: 0.3 }}
-              className="font-pixel text-pixel-blue/60 text-[10px] tracking-widest"
-            >
-              [ PRESS ANY KEY TO CONTINUE ]
-            </motion.p>
-
-            {/* Long idle extra */}
-            <AnimatePresence>
-              {isLongIdle && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: [0.3, 0.7, 0.3] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="font-pixel text-red-500/50 text-[9px] tracking-widest"
-                >
-                  EXTENDED INACTIVITY DETECTED
-                </motion.p>
-              )}
-            </AnimatePresence>
+          {/* Top status strip — echoes the persistent HUD */}
+          <div className="absolute top-0 inset-x-0 h-9 flex items-center gap-3 px-4 sm:px-6 border-b border-pixel-blue/15 bg-black/40 backdrop-blur-sm">
+            <span className="w-1.5 h-1.5 bg-green-400 animate-pulse" />
+            <span className="font-pixel text-[8px] text-pixel-white/90">{SITE.player}</span>
+            <span className="font-mono text-[10px] text-pixel-blue/80">{SITE.handle}</span>
+            <span className="hidden sm:block w-px h-4 bg-pixel-blue/15" />
+            <span className="font-pixel text-[8px] text-pixel-cyan tracking-widest">AFK MODE</span>
+            <span className="ml-auto font-mono text-[10px] text-pixel-gray/40">{SITE.version}</span>
           </div>
 
-          {/* Wake message overlay */}
+          {/* Center: the pause window */}
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ y: 24, opacity: 0, scale: 0.97 }}
+              animate={{ y: 0,  opacity: 1, scale: 1 }}
+              transition={{ duration: 0.45, ease: EASE.snap }}
+              onClick={e => e.stopPropagation()}
+              className="relative w-full max-w-xl"
+            >
+              {/* Corner brackets on the two square corners */}
+              <span className="absolute -top-px -left-px w-3.5 h-3.5 border-t border-l border-pixel-cyan/40 pointer-events-none" />
+              <span className="absolute -bottom-px -right-px w-3.5 h-3.5 border-b border-r border-pixel-cyan/40 pointer-events-none" />
+
+              <div
+                className="border border-pixel-cyan/25"
+                style={{
+                  background : 'rgba(4,7,13,0.97)',
+                  clipPath   : 'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))',
+                  boxShadow  : '0 0 60px rgba(0,212,255,0.08)',
+                }}
+              >
+                {/* Title bar — same chrome as the console / zone windows */}
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-pixel-cyan/15">
+                  <span className="w-2 h-2 bg-red-400/60" />
+                  <span className="w-2 h-2 bg-yellow-400/60" />
+                  <span className="w-2 h-2 bg-green-400/60" />
+                  <span className="font-mono text-[11px] text-pixel-gray/40 ml-2">afk.zone</span>
+                  <span className="ml-auto font-pixel text-[9px] text-pixel-cyan/70 tracking-widest">PAUSED</span>
+                </div>
+
+                <div className="px-5 sm:px-6 py-6 space-y-5">
+
+                  {/* Header */}
+                  <div>
+                    <p className="font-pixel text-[9px] text-pixel-cyan/50 tracking-[0.25em] mb-2">
+                      // SESSION SUSPENDED
+                    </p>
+                    <h2 className="font-pixel text-pixel-white text-base sm:text-lg leading-relaxed">
+                      Realm <span className="gradient-text">Paused</span>
+                    </h2>
+                    <p className="font-mono text-pixel-gray/50 text-xs mt-2">
+                      You stepped away, traveler. The realm held its breath.
+                    </p>
+                  </div>
+
+                  {/* Changli dialogue box */}
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="relative w-12 h-12 shrink-0 border border-pixel-cyan/40 overflow-hidden"
+                      style={{ clipPath: 'polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px))' }}
+                    >
+                      <img
+                        src={avatarImg}
+                        alt="Changli"
+                        className="w-full h-full object-cover object-top"
+                        style={{ filter: 'saturate(0.85) brightness(0.9) contrast(1.05)' }}
+                      />
+                      <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(0,212,255,0.06)' }} />
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 border border-[#04070d]" />
+                    </div>
+
+                    <div
+                      className="flex-1 min-w-0 border border-pixel-blue/15 bg-bg-card/25 px-4 py-3"
+                      style={{ clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%)' }}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-pixel text-[8px] text-pixel-cyan tracking-widest">CHANGLI-AI</span>
+                        <span className="w-1 h-1 bg-green-400 rounded-full animate-pulse" />
+                        <span className="font-mono text-[9px] text-green-400/80">ONLINE</span>
+                      </div>
+                      <p className="font-pixel text-[10px] text-pixel-white/90 mb-1.5">{current.title}</p>
+                      <p className="font-mono text-[11px] text-pixel-gray/70 leading-relaxed min-h-[2.5rem] whitespace-pre-line">
+                        {typed}
+                        <span className="inline-block w-0.5 h-3.5 bg-pixel-cyan/70 ml-0.5 align-middle animate-blink" />
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Session readout — real state, not invented */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-pixel-blue/10 border border-pixel-blue/10">
+                    <StatCell label="IDLE TIME" value={clock}                 accent="text-pixel-cyan" />
+                    <StatCell label="XP"        value={xp}                    accent="text-yellow-400" />
+                    <StatCell label="BADGES"    value={`${unlockedCount}/${total}`} accent="text-yellow-400" />
+                    <StatCell label="MAP"       value={`${mapPct}%`}          accent="text-pixel-cyan" />
+                  </div>
+
+                  {/* Extended-inactivity warning */}
+                  <AnimatePresence>
+                    {isLongIdle && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <p className="flex items-center gap-2 font-mono text-[10px] text-red-400/80">
+                          <PixelIcon name="skull" size={11} />
+                          EXTENDED INACTIVITY — the guardian is losing patience.
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Menu */}
+                  <div className="space-y-1.5 pt-1">
+                    <MenuRow icon="bolt"       label="RESUME QUEST"  hint="any key"  active onClick={handleWake} />
+                    <MenuRow icon="arrowLeft"  label="RETURN TO TOP" hint="scroll up"         onClick={returnTop} />
+                  </div>
+
+                  {/* Hint */}
+                  <p className="text-center font-pixel text-[9px] text-pixel-blue/60 tracking-widest animate-blink">
+                    [ PRESS ANY KEY TO CONTINUE ]
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Konami easter egg */}
+          <AnimatePresence>
+            {konamiActive && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="absolute top-14 left-1/2 -translate-x-1/2 text-center"
+              >
+                <p className="font-pixel text-yellow-400 text-sm tracking-widest">KONAMI CODE ACTIVATED</p>
+                <p className="font-mono text-yellow-400/60 text-xs mt-1">+99 RESPECT POINTS</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Wake flash */}
           <AnimatePresence>
             {showWake && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 flex items-center justify-center"
+                className="absolute inset-0 z-10 flex items-center justify-center"
                 style={{ background: 'rgba(5,7,15,0.7)' }}
               >
                 <motion.p
@@ -259,7 +389,7 @@ function AFKOverlay({ isIdle, isLongIdle, onWake, konamiActive }: AFKOverlayProp
           </AnimatePresence>
 
           {/* Corner tag */}
-          <div className="absolute bottom-4 right-4 font-pixel text-pixel-blue/15 text-[8px]">
+          <div className="absolute bottom-4 right-4 font-pixel text-pixel-blue/15 text-[8px] tracking-widest">
             AFK MODE · CHANGLI-AI ACTIVE
           </div>
         </motion.div>

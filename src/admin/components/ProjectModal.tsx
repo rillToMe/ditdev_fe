@@ -4,52 +4,17 @@ import { X, Upload, Trash2, Plus, Globe, Monitor } from 'lucide-react'
 import { FiGithub } from 'react-icons/fi'
 import type { IconType } from 'react-icons'
 import api, { getImageUrl } from '../services/api'
+import { btn, inputCls, textareaCls, labelCls } from '../ui'
 import type { Project, ProjectInput, ProjectLink } from '../../types/api'
 import ImageCropper from './ImageCropper'
 import Portal from './Portal'
 import DiscardDialog from './DiscardDialog'
 import type { ReactNode } from 'react'
 
-const S = {
-  overlay: 'fixed inset-0 z-50 flex items-center justify-center p-4',
-  backdrop: 'absolute inset-0 bg-black/75 backdrop-blur-sm',
-  modal: 'relative w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col',
-
-  input: [
-    'w-full px-4 py-3 text-sm font-mono',
-    'bg-[#0a0e1a] border border-[rgba(79,140,255,0.15)]',
-    'text-[#e2e8f0] placeholder-[rgba(148,163,184,0.35)]',
-    'focus:outline-none focus:border-[rgba(79,140,255,0.5)] focus:bg-[#0d1220]',
-    'transition-all duration-200',
-  ].join(' '),
-
-  label: 'block text-[11px] font-pixel tracking-widest text-[rgba(148,163,184,0.6)] mb-2 uppercase',
-
-  btnPrimary: [
-    'flex-1 px-6 py-3 font-pixel text-xs tracking-widest',
-    'bg-[rgba(79,140,255,0.12)] border border-[rgba(79,140,255,0.35)]',
-    'text-[#4f8cff] hover:bg-[rgba(79,140,255,0.2)] hover:border-[rgba(79,140,255,0.6)]',
-    'disabled:opacity-40 disabled:cursor-not-allowed',
-    'transition-all duration-200',
-  ].join(' '),
-
-  btnGhost: [
-    'flex-1 px-6 py-3 font-pixel text-xs tracking-widest',
-    'border border-[rgba(148,163,184,0.15)] text-[rgba(148,163,184,0.5)]',
-    'hover:border-[rgba(148,163,184,0.3)] hover:text-[rgba(148,163,184,0.8)]',
-    'transition-all duration-200',
-  ].join(' '),
-
-  divider: 'border-t border-[rgba(79,140,255,0.08)]',
-}
-
-const pixelClip = 'polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%)'
-const pixelClipLg = 'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)'
-
 const LINK_TYPES: { value: string; label: string; Icon: IconType; color: string }[] = [
-  { value: 'github', label: 'GitHub', Icon: FiGithub, color: '#94a3b8' },
-  { value: 'demo', label: 'Demo', Icon: Monitor, color: '#00d4ff' },
-  { value: 'website', label: 'Website', Icon: Globe, color: '#4f8cff' },
+  { value: 'github', label: 'GitHub', Icon: FiGithub, color: '#a3a3ab' },
+  { value: 'demo', label: 'Demo', Icon: Monitor, color: '#a3a3ab' },
+  { value: 'website', label: 'Website', Icon: Globe, color: '#a3a3ab' },
 ]
 
 interface ProjectFormData {
@@ -62,23 +27,17 @@ interface ProjectFormData {
   links: ProjectLink[]
 }
 
-function PixelSpinner({ color = '#4f8cff' }: { color?: string }) {
-  return (
-    <div className="w-4 h-4 border-2 rounded-full animate-spin"
-      style={{ borderColor: `${color}30`, borderTopColor: color }} />
-  )
+function Spinner() {
+  return <span className="admin-spinner admin-spinner--sm" />
 }
 
-function Field({ label, delay = 0, children }: { label: string; delay?: number; children: ReactNode }) {
+function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   return (
-    <motion.div
-      initial={{ x: -16, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ delay, duration: 0.3 }}
-    >
-      <label className={S.label}>{label}</label>
+    <div>
+      <label className={labelCls}>{label}</label>
       {children}
-    </motion.div>
+      {hint && <p className="admin-hint">{hint}</p>}
+    </div>
   )
 }
 
@@ -262,365 +221,272 @@ export default function ProjectModal({ project, onClose, onSuccess }: ProjectMod
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className={S.overlay}
+          className="admin-overlay"
           onClick={handleAttemptClose}
         >
           {/* Backdrop */}
-          <div className={S.backdrop} />
+          <div className="admin-overlay-backdrop" />
 
           {/* Modal */}
           <motion.div
-            initial={{ scale: 0.94, y: 24, opacity: 0 }}
+            initial={{ scale: 0.96, y: 18, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0.94, y: 24, opacity: 0 }}
-            transition={{ type: 'spring', damping: 22, stiffness: 300 }}
+            exit={{ scale: 0.96, y: 18, opacity: 0 }}
+            transition={{ type: 'spring', damping: 24, stiffness: 300 }}
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            className={S.modal}
-            style={{
-              background: 'linear-gradient(135deg, #0a0e1a 0%, #0d1220 100%)',
-              border: '1px solid rgba(79,140,255,0.18)',
-              clipPath: pixelClipLg,
-              boxShadow: '0 0 60px rgba(79,140,255,0.08), 0 32px 64px rgba(0,0,0,0.6)',
-            }}
+            className="admin-modal"
+            style={{ maxWidth: 672 }}
           >
             {/* Header */}
-            <div
-              className="flex items-center justify-between px-6 py-4 flex-shrink-0"
-              style={{ borderBottom: '1px solid rgba(79,140,255,0.1)', background: 'rgba(79,140,255,0.03)' }}
-            >
-              <div className="flex items-center gap-3">
-                {/* Pixel accent */}
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-[#4f8cff]" style={{ clipPath: 'polygon(0 0,100% 0,100% 100%,0 100%)' }} />
-                  <div className="w-2 h-2 bg-[#00d4ff]/60" style={{ clipPath: 'polygon(0 0,100% 0,100% 100%,0 100%)' }} />
-                </div>
-                <h2 className="font-pixel text-xs tracking-widest text-[#e2e8f0]">
-                  {project ? '// EDIT_PROJECT' : '// NEW_PROJECT'}
-                </h2>
-              </div>
-              <motion.button
-                whileHover={{ rotate: 90, scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={handleAttemptClose}
-                className="p-1.5 text-[rgba(148,163,184,0.4)] hover:text-[rgba(148,163,184,0.8)] transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </motion.button>
+            <div className="admin-modal-head">
+              <h2 className="admin-modal-title">
+                {project ? 'Edit project' : 'New project'}
+              </h2>
+              <button className="admin-iconbtn" style={{ width: 32, height: 32 }} onClick={handleAttemptClose} aria-label="Close">
+                <X size={16} />
+              </button>
             </div>
 
             {/* Form body */}
-            <form
-              onSubmit={handleSubmit}
-              className="flex-1 overflow-y-auto px-6 py-5 space-y-5"
-              style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(79,140,255,0.2) transparent' }}
-            >
-              {/* Title */}
-              <Field label="Title *" delay={0.05}>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className={S.input}
-                  style={{ clipPath: pixelClip }}
-                  placeholder="Project title"
-                  required
-                />
-              </Field>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+              <div className="admin-modal-body space-y-5">
 
-              {/* Description */}
-              <Field label="Description *" delay={0.1}>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className={S.input + ' resize-none'}
-                  style={{ clipPath: 'none' }}
-                  rows={4}
-                  placeholder="Project description"
-                  required
-                />
-              </Field>
-
-              {/* Overview (markdown) */}
-              <Field label="Overview (Markdown)" delay={0.12}>
-                <textarea
-                  value={formData.content}
-                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                  className={S.input + ' resize-y'}
-                  style={{ clipPath: 'none' }}
-                  rows={10}
-                  placeholder={"Long-form overview shown on the project page.\nSupports markdown: # headings, **bold**, - lists, ```code```, etc."}
-                />
-                <p className="mt-1.5 font-mono text-[10px] text-[rgba(148,163,184,0.35)]">
-                  shown on the public project page · markdown supported
-                </p>
-              </Field>
-
-              {/* Thumbnail */}
-              <Field label="Thumbnail" delay={0.15}>
-                <div className="space-y-3">
-                  {/* Upload button */}
-                  <label
-                    className="flex items-center gap-2 px-4 py-3 cursor-pointer transition-all duration-200 group"
-                    style={{
-                      background: 'rgba(79,140,255,0.06)',
-                      border: '1px dashed rgba(79,140,255,0.25)',
-                      clipPath: pixelClip,
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(79,140,255,0.12)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(79,140,255,0.06)'}
-                  >
-                    <Upload className="w-4 h-4 text-[rgba(79,140,255,0.6)]" />
-                    <span className="font-pixel text-[10px] tracking-widest text-[rgba(79,140,255,0.7)]">
-                      {uploading ? 'UPLOADING...' : 'CHOOSE_IMAGE'}
-                    </span>
-                    <input type="file" accept="image/*" onChange={handleImageSelect} className="hidden" disabled={uploading} />
-                  </label>
-
-                  {/* Upload indicator */}
-                  {uploading && (
-                    <div className="flex items-center gap-2">
-                      <PixelSpinner />
-                      <span className="font-mono text-xs text-[rgba(79,140,255,0.6)]">uploading image...</span>
-                    </div>
-                  )}
-
-                  {/* Preview */}
-                  {formData.thumbnail && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="relative group overflow-hidden"
-                      style={{ clipPath: pixelClip }}
-                    >
-                      <img
-                        src={getImageUrl(formData.thumbnail) || undefined}
-                        alt="Preview"
-                        className="w-full h-44 object-cover"
-                      />
-                      {/* Overlay */}
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                        <span className="font-pixel text-[10px] text-white/80 tracking-widest">PREVIEW</span>
-                        <button
-                          type="button"
-                          onClick={() => { dropUpload(formData.thumbnail); setFormData(prev => ({ ...prev, thumbnail: '' })) }}
-                          className="p-1.5 bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/40 transition"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                      {/* Pixel corner accent */}
-                      <div className="absolute top-0 right-0 w-4 h-4 bg-[#4f8cff]/20 border-l border-b border-[#4f8cff]/30" />
-                    </motion.div>
-                  )}
-                </div>
-              </Field>
-
-              {/* Screenshots */}
-              <Field label="Screenshots" delay={0.18}>
-                <div className="space-y-3">
-                  {/* Gallery grid */}
-                  {formData.screenshots.length > 0 && (
-                    <div className="grid grid-cols-3 gap-2">
-                      <AnimatePresence>
-                        {formData.screenshots.map((shot, i) => (
-                          <motion.div
-                            key={shot}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            className="relative group overflow-hidden"
-                            style={{ clipPath: pixelClip }}
-                          >
-                            <img src={getImageUrl(shot) || undefined} alt={`Screenshot ${i + 1}`}
-                              className="w-full h-20 object-cover" />
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <button type="button" onClick={() => removeScreenshot(i)}
-                                title="Remove screenshot"
-                                className="p-1.5 bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/40 transition">
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </motion.div>
-                        ))}
-                      </AnimatePresence>
-                    </div>
-                  )}
-
-                  {/* Upload button */}
-                  <label
-                    className="flex items-center gap-2 px-4 py-3 cursor-pointer transition-all duration-200 group"
-                    style={{
-                      background: 'rgba(0,212,255,0.05)',
-                      border: '1px dashed rgba(0,212,255,0.22)',
-                      clipPath: pixelClip,
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,212,255,0.1)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0,212,255,0.05)'}
-                  >
-                    {uploadingShots ? (
-                      <>
-                        <PixelSpinner color="#00d4ff" />
-                        <span className="font-pixel text-[10px] tracking-widest text-[rgba(0,212,255,0.7)]">UPLOADING...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4 text-[rgba(0,212,255,0.7)]" />
-                        <span className="font-pixel text-[10px] tracking-widest text-[rgba(0,212,255,0.8)]">ADD_SCREENSHOT</span>
-                      </>
-                    )}
-                    <input type="file" accept="image/*" multiple onChange={handleShotsSelect} className="hidden" disabled={uploadingShots} />
-                  </label>
-                  <p className="font-mono text-[10px] text-[rgba(148,163,184,0.35)]">
-                    gallery images shown on the project page · multiple allowed
-                  </p>
-                </div>
-              </Field>
-
-              {/* Tags */}
-              <Field label="Tags" delay={0.2}>
-                <div className="flex gap-2 mb-3">
+                {/* Title */}
+                <Field label="Title *">
                   <input
                     type="text"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
-                    className={S.input + ' flex-1'}
-                    style={{ clipPath: pixelClip }}
-                    placeholder="Add tag, press Enter"
+                    value={formData.title}
+                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                    className={inputCls}
+                    placeholder="Project title"
+                    required
                   />
-                  <button
-                    type="button"
-                    onClick={addTag}
-                    className="px-4 font-pixel text-[10px] tracking-widest text-[#4f8cff] border border-[rgba(79,140,255,0.3)] hover:bg-[rgba(79,140,255,0.1)] transition-all"
-                    style={{ clipPath: pixelClip }}
-                  >
-                    + ADD
-                  </button>
-                </div>
+                </Field>
 
-                {/* Tag chips */}
-                <div className="flex flex-wrap gap-2">
-                  <AnimatePresence>
-                    {formData.tags.map(tag => (
-                      <motion.span
-                        key={tag}
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        className="flex items-center gap-1.5 px-3 py-1 font-mono text-xs"
-                        style={{
-                          background: 'rgba(0,212,255,0.06)',
-                          border: '1px solid rgba(0,212,255,0.2)',
-                          color: 'rgba(0,212,255,0.8)',
-                          clipPath: pixelClip,
-                        }}
+                {/* Description */}
+                <Field label="Description *">
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    className={textareaCls}
+                    rows={4}
+                    placeholder="Project description"
+                    required
+                  />
+                </Field>
+
+                {/* Overview (markdown) */}
+                <Field label="Overview (Markdown)" hint="Shown on the public project page · markdown supported">
+                  <textarea
+                    value={formData.content}
+                    onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                    className="admin-textarea"
+                    rows={10}
+                    placeholder={"Long-form overview shown on the project page.\nSupports markdown: # headings, **bold**, - lists, ```code```, etc."}
+                  />
+                </Field>
+
+                {/* Thumbnail */}
+                <Field label="Thumbnail">
+                  <div className="space-y-3">
+                    <label className="admin-dropzone">
+                      <Upload size={16} />
+                      <span>{uploading ? 'Uploading…' : 'Choose image'}</span>
+                      <input type="file" accept="image/*" onChange={handleImageSelect} className="hidden" disabled={uploading} />
+                    </label>
+
+                    {uploading && (
+                      <div className="flex items-center gap-2" style={{ fontSize: 13, color: 'var(--a-muted)' }}>
+                        <Spinner /> Uploading image…
+                      </div>
+                    )}
+
+                    {formData.thumbnail && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="relative group overflow-hidden"
+                        style={{ borderRadius: 'var(--a-radius-sm)', border: '1px solid var(--a-border)' }}
                       >
-                        {tag}
-                        <button type="button" onClick={() => removeTag(tag)}
-                          className="hover:text-white transition-colors ml-0.5">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </motion.span>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </Field>
-
-              {/* Links */}
-              <Field label="Links" delay={0.25}>
-                <div className="space-y-2">
-                  <AnimatePresence>
-                    {formData.links.map((link, i) => {
-                      const typeConf = LINK_TYPES.find(t => t.value === link.type) || LINK_TYPES[0]
-                      const Icon = typeConf.Icon
-                      return (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, x: -16 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: 16 }}
-                          className="flex gap-2"
-                        >
-                          {/* Type select */}
-                          <div className="relative">
-                            <Icon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: typeConf.color }} />
-                            <select
-                              value={link.type}
-                              onChange={(e) => updateLink(i, 'type', e.target.value)}
-                              className="pl-8 pr-3 py-3 font-mono text-xs appearance-none cursor-pointer"
-                              style={{
-                                background: '#0a0e1a',
-                                border: '1px solid rgba(79,140,255,0.15)',
-                                color: typeConf.color,
-                                clipPath: pixelClip,
-                                outline: 'none',
-                              }}
-                            >
-                              {LINK_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                            </select>
-                          </div>
-
-                          {/* URL input */}
-                          <input
-                            type="url"
-                            value={link.url}
-                            onChange={(e) => updateLink(i, 'url', e.target.value)}
-                            placeholder="https://..."
-                            className={S.input + ' flex-1'}
-                            style={{ clipPath: pixelClip }}
-                          />
-
-                          {/* Remove */}
+                        <img
+                          src={getImageUrl(formData.thumbnail) || undefined}
+                          alt="Preview"
+                          className="w-full object-cover"
+                          style={{ height: 176, display: 'block' }}
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                          <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 600 }}>Preview</span>
                           <button
                             type="button"
-                            onClick={() => removeLink(i)}
-                            className="px-3 text-red-500/50 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all"
-                            style={{ clipPath: pixelClip }}
+                            className={btn.dangerSm}
+                            onClick={() => { dropUpload(formData.thumbnail); setFormData(prev => ({ ...prev, thumbnail: '' })) }}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 size={14} />
                           </button>
-                        </motion.div>
-                      )
-                    })}
-                  </AnimatePresence>
-                </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                </Field>
 
-                <button
-                  type="button"
-                  onClick={addLink}
-                  className="mt-2 flex items-center gap-1.5 font-pixel text-[10px] tracking-widest text-[rgba(79,140,255,0.5)] hover:text-[rgba(79,140,255,0.9)] transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  ADD LINK
-                </button>
-              </Field>
+                {/* Screenshots */}
+                <Field label="Screenshots" hint="Gallery images shown on the project page · multiple allowed">
+                  <div className="space-y-3">
+                    {formData.screenshots.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2">
+                        <AnimatePresence>
+                          {formData.screenshots.map((shot, i) => (
+                            <motion.div
+                              key={shot}
+                              initial={{ opacity: 0, scale: 0.94 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.94 }}
+                              className="relative group overflow-hidden"
+                              style={{ borderRadius: 'var(--a-radius-sm)', border: '1px solid var(--a-border)' }}
+                            >
+                              <img src={getImageUrl(shot) || undefined} alt={`Screenshot ${i + 1}`}
+                                className="w-full object-cover" style={{ height: 80, display: 'block' }} />
+                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <button type="button" className={btn.dangerSm} onClick={() => removeScreenshot(i)} title="Remove screenshot">
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
+                      </div>
+                    )}
+
+                    <label className="admin-dropzone">
+                      {uploadingShots ? (
+                        <>
+                          <Spinner />
+                          <span>Uploading…</span>
+                        </>
+                      ) : (
+                        <>
+                          <Plus size={16} />
+                          <span>Add screenshot</span>
+                        </>
+                      )}
+                      <input type="file" accept="image/*" multiple onChange={handleShotsSelect} className="hidden" disabled={uploadingShots} />
+                    </label>
+                  </div>
+                </Field>
+
+                {/* Tags */}
+                <Field label="Tags">
+                  <div className="flex gap-2 mb-3">
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
+                      className={inputCls + ' flex-1'}
+                      placeholder="Add tag, press Enter"
+                    />
+                    <button type="button" className={btn.ghost} onClick={addTag}>
+                      <Plus size={15} /> Add
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <AnimatePresence>
+                      {formData.tags.map(tag => (
+                        <motion.span
+                          key={tag}
+                          initial={{ scale: 0.85, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.85, opacity: 0 }}
+                          className="admin-chip"
+                        >
+                          {tag}
+                          <button type="button" onClick={() => removeTag(tag)} className="hover:text-[var(--a-text)] transition-colors">
+                            <X size={12} />
+                          </button>
+                        </motion.span>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                </Field>
+
+                {/* Links */}
+                <Field label="Links">
+                  <div className="space-y-2">
+                    <AnimatePresence>
+                      {formData.links.map((link, i) => {
+                        const typeConf = LINK_TYPES.find(t => t.value === link.type) || LINK_TYPES[0]
+                        const Icon = typeConf.Icon
+                        return (
+                          <motion.div
+                            key={i}
+                            initial={{ opacity: 0, x: -12 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 12 }}
+                            className="flex gap-2"
+                          >
+                            <div className="relative">
+                              <Icon className="absolute pointer-events-none" size={15}
+                                style={{ left: 11, top: '50%', transform: 'translateY(-50%)', color: typeConf.color }} />
+                              <select
+                                value={link.type}
+                                onChange={(e) => updateLink(i, 'type', e.target.value)}
+                                className="admin-select"
+                                style={{ paddingLeft: 34, width: 'auto', color: typeConf.color }}
+                              >
+                                {LINK_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                              </select>
+                            </div>
+
+                            <input
+                              type="url"
+                              value={link.url}
+                              onChange={(e) => updateLink(i, 'url', e.target.value)}
+                              placeholder="https://..."
+                              className={inputCls + ' flex-1'}
+                            />
+
+                            <button
+                              type="button"
+                              onClick={() => removeLink(i)}
+                              className="admin-iconbtn"
+                              style={{ color: 'var(--a-red)', borderColor: 'transparent', background: 'transparent' }}
+                              title="Remove link"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </motion.div>
+                        )
+                      })}
+                    </AnimatePresence>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={addLink}
+                    className="inline-flex items-center gap-1.5 transition-colors"
+                    style={{ marginTop: 10, fontSize: 13, fontWeight: 500, color: 'var(--a-link)' }}
+                  >
+                    <Plus size={14} /> Add link
+                  </button>
+                </Field>
+              </div>
 
               {/* Actions */}
-              <motion.div
-                initial={{ y: 16, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="flex gap-3 pt-4"
-                style={{ borderTop: '1px solid rgba(79,140,255,0.08)' }}
-              >
-                <button type="button" onClick={handleAttemptClose} className={S.btnGhost} style={{ clipPath: pixelClip }}>
-                  CANCEL
+              <div className="admin-modal-foot">
+                <button type="button" onClick={handleAttemptClose} className={btn.ghost + ' flex-1'}>
+                  Cancel
                 </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className={S.btnPrimary}
-                  style={{ clipPath: pixelClip }}
-                >
+                <button type="submit" disabled={saving} className={btn.primary + ' flex-1'}>
                   {saving ? (
                     <span className="flex items-center justify-center gap-2">
-                      <PixelSpinner /> SAVING...
+                      <Spinner /> Saving…
                     </span>
                   ) : (
-                    project ? 'UPDATE PROJECT' : 'CREATE PROJECT'
+                    project ? 'Update project' : 'Create project'
                   )}
                 </button>
-              </motion.div>
+              </div>
             </form>
           </motion.div>
         </motion.div>

@@ -19,7 +19,7 @@ interface Waypoint {
 
 const JOURNEY: Waypoint[] = [
   {
-    id: 1,
+    id: 2,
     period: '2024 — PRESENT',
     title: 'Vocational School',
     institution: 'SMK NEGERI 4 PAYAKUMBUH',
@@ -31,7 +31,7 @@ const JOURNEY: Waypoint[] = [
     icon: 'flag',
   },
   {
-    id: 2,
+    id: 1,
     period: '2021 — 2024',
     title: 'First Descent',
     institution: 'MTs Negeri 3 Kab. Lima Puluh Kota',
@@ -47,12 +47,16 @@ const JOURNEY: Waypoint[] = [
 /* Small status flag used in the dossier header. */
 function StatusPill({ item }: { item: Waypoint }) {
   const ongoing = item.status === 'ongoing'
+  const c = item.color
   return (
-    <span className="shrink-0 inline-flex items-center gap-1.5 font-pixel text-[8px] tracking-widest px-2 py-1 border border-pixel-dark text-pixel-gray/70">
+    <span
+      className="shrink-0 inline-flex items-center gap-1.5 font-pixel text-[8px] tracking-widest px-2 py-1 border"
+      style={{ borderColor: `${c}55`, color: c, background: `${c}12` }}
+    >
       {ongoing ? (
-        <span className="w-1.5 h-1.5 animate-pulse bg-green-400/70" />
+        <span className="w-1.5 h-1.5 animate-pulse" style={{ background: c }} />
       ) : (
-        <PixelIcon name="check" size={9} className="text-pixel-gray/50" />
+        <PixelIcon name="check" size={9} style={{ color: c }} />
       )}
       {ongoing ? 'IN PROGRESS' : 'CLEARED'}
     </span>
@@ -87,7 +91,7 @@ function WaypointRow({
       {!isLast && (
         <div
           className="absolute left-[21px] top-14 bottom-0 w-px"
-          style={{ backgroundImage: 'repeating-linear-gradient(to bottom, #1e2a3a 0 4px, transparent 4px 9px)' }}
+          style={{ backgroundImage: `repeating-linear-gradient(to bottom, ${item.color}66 0 4px, transparent 4px 9px)` }}
         />
       )}
 
@@ -100,18 +104,23 @@ function WaypointRow({
           className="relative w-11 h-11 flex items-center justify-center"
         >
           <div
-            className="w-9 h-9 flex items-center justify-center bg-bg-primary border border-pixel-dark"
+            className="w-9 h-9 flex items-center justify-center bg-bg-primary border"
             style={{
+              borderColor: `${item.color}66`,
+              background: `radial-gradient(circle at 50% 40%, ${item.color}26, #0a0e1a 75%)`,
               clipPath: 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)',
             }}
           >
             <PixelIcon name={item.icon} size={16} style={{ color: item.color }} />
           </div>
           {item.status === 'ongoing' && (
-            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400/70 animate-pulse" />
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 animate-pulse" style={{ background: item.color }} />
           )}
           {item.status === 'completed' && (
-            <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 flex items-center justify-center bg-bg-primary border border-pixel-dark text-pixel-gray/60">
+            <span
+              className="absolute -bottom-0.5 -right-0.5 w-4 h-4 flex items-center justify-center bg-bg-primary border"
+              style={{ borderColor: `${item.color}55`, color: item.color }}
+            >
               <PixelIcon name="check" size={9} />
             </span>
           )}
@@ -125,8 +134,9 @@ function WaypointRow({
         className="group flex-1 min-w-0 relative"
       >
         <div
-          className="relative overflow-hidden border border-pixel-dark bg-bg-card/40 transition-colors duration-300"
+          className="relative overflow-hidden border bg-bg-card/40 transition-colors duration-300"
           style={{
+            borderColor: `${item.color}40`,
             clipPath: 'polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%)',
           }}
         >
@@ -134,17 +144,17 @@ function WaypointRow({
           <div className="absolute inset-0 grid-faint opacity-30 pointer-events-none" />
           <div
             className="absolute left-0 top-0 bottom-0 w-[2px]"
-            style={{ background: `linear-gradient(to bottom, ${item.color}99, ${item.color}14)` }}
+            style={{ background: `linear-gradient(to bottom, ${item.color}, ${item.color}22)` }}
           />
 
         {/* Header bar */}
-        <div className="relative flex items-center gap-2.5 px-5 py-2.5 border-b border-pixel-dark bg-black/20">
+        <div className="relative flex items-center gap-2.5 px-5 py-2.5 border-b bg-black/20" style={{ borderColor: `${item.color}26` }}>
           <span className="w-1.5 h-1.5 shrink-0" style={{ background: item.color }} />
-          <span className="font-mono text-[10px] tracking-widest text-pixel-gray/60">
+          <span className="font-mono text-[10px] tracking-widest" style={{ color: `${item.color}cc` }}>
             WAYPOINT {code}/{String(total).padStart(2, '0')}
           </span>
           <span className="hidden sm:inline font-mono text-[10px] text-pixel-gray/35">· {item.period}</span>
-          <span className="flex-1 h-px bg-pixel-dark" />
+          <span className="flex-1 h-px" style={{ background: `${item.color}33` }} />
           <StatusPill item={item} />
         </div>
 
@@ -157,7 +167,7 @@ function WaypointRow({
 
           <div className="space-y-1.5 mb-4 relative">
             <p className="flex items-center gap-2 font-mono text-xs text-pixel-white/80">
-              <PixelIcon name="shield" size={11} className="text-pixel-gray/50" />
+              <PixelIcon name="shield" size={11} style={{ color: item.color }} />
               {item.institution}
             </p>
             <p className="flex items-center gap-2 font-mono text-[11px] text-pixel-gray/50">
@@ -166,21 +176,24 @@ function WaypointRow({
             </p>
           </div>
 
-          <div className="relative pl-3 mb-4 border-l border-pixel-dark">
+          <div className="relative pl-3 mb-4 border-l" style={{ borderColor: `${item.color}44` }}>
             <p className="font-mono text-xs text-pixel-gray/70 leading-relaxed">{item.description}</p>
           </div>
 
           <div className="relative flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="flex items-center gap-1.5 font-pixel text-[8px] tracking-widest text-pixel-gray/40">
-              <PixelIcon name="sparkle" size={10} className="text-pixel-gray/40" />
+            <span className="flex items-center gap-1.5 font-pixel text-[8px] tracking-widest" style={{ color: `${item.color}99` }}>
+              <PixelIcon name="sparkle" size={10} style={{ color: item.color }} />
               SKILLS
             </span>
             <div className="flex flex-wrap gap-1.5">
               {item.tags.map(tag => (
                 <span
                   key={tag}
-                  className="font-mono text-[10px] px-2 py-0.5 text-pixel-gray/70 border border-pixel-dark bg-bg-primary/40"
+                  className="font-mono text-[10px] px-2 py-0.5 border"
                   style={{
+                    color: `${item.color}dd`,
+                    borderColor: `${item.color}40`,
+                    background: `${item.color}0f`,
                     clipPath: 'polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%)',
                   }}
                 >
@@ -233,8 +246,8 @@ export default function Education() {
           transition={{ duration: DUR.slow, ease: EASE.snap, delay: 0.2 }}
           className="mt-2 flex items-center gap-3 pl-0 sm:pl-1"
         >
-          <span className="w-2 h-2 bg-yellow-400/60" />
-          <span className="font-pixel text-[9px] text-yellow-400/50 tracking-widest">
+          <span className="w-2 h-2 bg-pixel-cyan" />
+          <span className="font-pixel text-[9px] text-pixel-cyan tracking-widest">
             JOURNEY CONTINUES…
           </span>
         </motion.div>

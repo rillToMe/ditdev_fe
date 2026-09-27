@@ -97,6 +97,84 @@ const rnd = (n: number) => {
   return x - Math.floor(x)
 }
 
+/* ── Milky Way: rendered once to an offscreen canvas, then composited
+   back through a blur pass. Blurring melts the hard pixel dots and
+   blotchy dust into a smooth, continuous river of unresolved starlight
+   instead of coarse grain — while keeping the warm tan/brown palette.
+   Cached until the canvas resizes. ──────────────────────────────── */
+function renderGalaxy(w: number, h: number): HTMLCanvasElement {
+  const c = document.createElement('canvas')
+  c.width = w
+  c.height = h
+  const ctx = c.getContext('2d')
+  if (!ctx) return c
+
+  ctx.save()
+  ctx.translate(w * 0.52, h * 0.50)
+  ctx.rotate(-0.60)
+  const bandW = Math.max(w, h) * 1.9
+  const bandH = h * 1.15
+  const toBand = (bx: number, by: number) => ({
+    x: w * 0.52 + bx * Math.cos(-0.60) - by * Math.sin(-0.60),
+    y: h * 0.50 + bx * Math.sin(-0.60) + by * Math.cos(-0.60),
+  })
+
+  // broad warm glow of unresolved starlight — many stops, so no banding
+  const mw = ctx.createLinearGradient(0, -bandH * 0.5, 0, bandH * 0.5)
+  mw.addColorStop(0,    'transparent')
+  mw.addColorStop(0.14, 'rgba(150,122,88,0.025)')
+  mw.addColorStop(0.30, 'rgba(168,138,100,0.07)')
+  mw.addColorStop(0.44, 'rgba(198,168,124,0.12)')
+  mw.addColorStop(0.50, 'rgba(210,182,136,0.145)')
+  mw.addColorStop(0.56, 'rgba(198,168,124,0.12)')
+  mw.addColorStop(0.70, 'rgba(168,138,100,0.07)')
+  mw.addColorStop(0.86, 'rgba(150,122,88,0.025)')
+  mw.addColorStop(1,    'transparent')
+  ctx.fillStyle = mw
+  ctx.fillRect(-bandW / 2, -bandH / 2, bandW, bandH)
+
+  // hotter inner core — the galactic bulge, warmest and densest
+  const core = ctx.createLinearGradient(0, -bandH * 0.22, 0, bandH * 0.22)
+  core.addColorStop(0,    'transparent')
+  core.addColorStop(0.32, 'rgba(212,184,140,0.05)')
+  core.addColorStop(0.50, 'rgba(232,205,158,0.115)')
+  core.addColorStop(0.68, 'rgba(212,184,140,0.05)')
+  core.addColorStop(1,    'transparent')
+  ctx.fillStyle = core
+  ctx.fillRect(-bandW / 2, -bandH * 0.22, bandW, bandH * 0.44)
+
+  // dark dust lanes — soft, low-alpha rifts that blend once blurred
+  for (let i = 0; i < 20; i++) {
+    const dx = (i / 19 - 0.5) * bandW * 0.88
+    const dy = Math.sin(i * 2.3 + 1.1) * bandH * 0.05
+    const dr = bandH * (0.05 + rnd(i * 3.7 + 5.2) * 0.10)
+    const dg = ctx.createRadialGradient(dx, dy, 0, dx, dy, dr)
+    dg.addColorStop(0,   `rgba(14,10,8,${0.12 + rnd(i * 1.9) * 0.10})`)
+    dg.addColorStop(0.5, `rgba(14,10,8,${0.04 + rnd(i * 1.9) * 0.05})`)
+    dg.addColorStop(1,   'transparent')
+    ctx.fillStyle = dg
+    ctx.beginPath(); ctx.arc(dx, dy, dr, 0, Math.PI * 2); ctx.fill()
+  }
+
+  // fine star cloud — many tiny, low-alpha suns, mostly warm tan
+  for (let i = 0; i < 560; i++) {
+    const bx = (rnd(i * 1.37 + 9.1) - 0.5) * bandW * 0.94
+    const by = (rnd(i * 2.71 + 3.3) - 0.5) * bandH * 0.36
+    const p  = toBand(bx, by)
+    if (p.x < -2 || p.x > w + 2 || p.y < -2 || p.y > h + 2) continue
+    const tw = 0.16 + rnd(i * 5.3) * 0.32
+    const tint = i % 9 === 0 ? '196,214,255'
+               : i % 3 === 0 ? '226,205,168'
+               : '238,214,170'
+    ctx.fillStyle = `rgba(${tint},${tw})`
+    const s = i % 11 === 0 ? 1.4 : 1
+    ctx.fillRect(p.x, p.y, s, s)
+  }
+
+  ctx.restore()
+  return c
+}
+
 /* ── Study log: honest, still-learning notes — deliberately no XP total
    or badge scoreboard, which read as bragging for a beginner portfolio.
    Stage tags reuse the constellation's tier vocabulary so the copy stays
@@ -165,6 +243,8 @@ export default function Skills() {
   const containerRef = useRef<HTMLDivElement>(null)
   const animFrameRef = useRef(0)
   const timeRef      = useRef(0)
+  // cached, pre-blurred Milky Way band — rebuilt only when the canvas resizes
+  const galaxyRef    = useRef<{ w: number; h: number; canvas: HTMLCanvasElement } | null>(null)
 
   const [activeCategory, setActiveCategory] = useState('all')
   const [hoveredSkill,   setHoveredSkill]   = useState<string | null>(null)
@@ -212,61 +292,22 @@ export default function Skills() {
 
     /* ── Milky Way galaxy: a broad dusty river of unresolved starlight
        with dark dust lanes, matching the reference photo (the
-       Scorpius/Sagittarius core — Kaus Australis, Shaula, Lesath).
-       Warm tan glow + dark rifts + a dense star cloud along the band. ── */
+       Scorpius/Sagittarius core). Rendered offscreen and composited
+       through a blur so the band is smooth and fine, not coarse grain. ── */
+    if (!galaxyRef.current || galaxyRef.current.w !== w || galaxyRef.current.h !== h) {
+      galaxyRef.current = { w, h, canvas: renderGalaxy(w, h) }
+    }
+    const galaxy = galaxyRef.current.canvas
     ctx.save()
-    ctx.translate(w * 0.52, h * 0.50)
-    ctx.rotate(-0.60)
-    const bandW = Math.max(w, h) * 1.9
-    const bandH = h * 1.15
-    const toBand = (bx: number, by: number) => ({
-      x: w * 0.52 + bx * Math.cos(-0.60) - by * Math.sin(-0.60),
-      y: h * 0.50 + bx * Math.sin(-0.60) + by * Math.cos(-0.60),
-    })
-
-    // broad warm glow of unresolved starlight — tan/brown, not blue-white
-    const mw = ctx.createLinearGradient(0, -bandH * 0.5, 0, bandH * 0.5)
-    mw.addColorStop(0,    'transparent')
-    mw.addColorStop(0.24, 'rgba(150,122,88,0.05)')
-    mw.addColorStop(0.50, 'rgba(198,168,124,0.16)')
-    mw.addColorStop(0.76, 'rgba(150,122,88,0.05)')
-    mw.addColorStop(1,    'transparent')
-    ctx.fillStyle = mw
-    ctx.fillRect(-bandW / 2, -bandH / 2, bandW, bandH)
-
-    // hotter inner core — the galactic bulge, warmest and densest
-    const core = ctx.createLinearGradient(0, -bandH * 0.16, 0, bandH * 0.16)
-    core.addColorStop(0,   'transparent')
-    core.addColorStop(0.5, 'rgba(232,205,158,0.13)')
-    core.addColorStop(1,   'transparent')
-    ctx.fillStyle = core
-    ctx.fillRect(-bandW / 2, -bandH * 0.16, bandW, bandH * 0.32)
-
-    // dark dust lanes cutting through the glow
-    for (let i = 0; i < 13; i++) {
-      const dx = (i / 12 - 0.5) * bandW * 0.82
-      const dy = Math.sin(i * 2.3 + 1.1) * bandH * 0.06
-      const dr = bandH * (0.06 + rnd(i * 3.7 + 5.2) * 0.11)
-      const dg = ctx.createRadialGradient(dx, dy, 0, dx, dy, dr)
-      dg.addColorStop(0, `rgba(14,10,8,${0.28 + rnd(i * 1.9) * 0.14})`)
-      dg.addColorStop(1, 'transparent')
-      ctx.fillStyle = dg
-      ctx.beginPath(); ctx.arc(dx, dy, dr, 0, Math.PI * 2); ctx.fill()
-    }
-
-    // dense star cloud hugging the band — mostly warm tan suns
-    for (let i = 0; i < 320; i++) {
-      const bx = (rnd(i * 1.37 + 9.1) - 0.5) * bandW * 0.92
-      const by = (rnd(i * 2.71 + 3.3) - 0.5) * bandH * 0.34
-      const p  = toBand(bx, by)
-      if (p.x < 0 || p.x > w || p.y < 0 || p.y > h) continue
-      const tw = 0.30 + rnd(i * 5.3) * 0.45
-      const tint = i % 8 === 0 ? '196,214,255'
-                 : i % 3 === 0 ? '226,205,168'
-                 : '238,214,170'
-      ctx.fillStyle = `rgba(${tint},${tw})`
-      ctx.fillRect(p.x, p.y, i % 9 === 0 ? 1.5 : 1, i % 9 === 0 ? 1.5 : 1)
-    }
+    ctx.filter = 'blur(1.4px)'
+    ctx.globalAlpha = 0.92
+    ctx.drawImage(galaxy, 0, 0)
+    ctx.restore()
+    // a second, sharper pass adds fine sparkle back without the grain
+    ctx.save()
+    ctx.filter = 'blur(0.4px)'
+    ctx.globalAlpha = 0.35
+    ctx.drawImage(galaxy, 0, 0)
     ctx.restore()
 
     /* ── Starfield: a dense, even field of tiny pixel stars ──────── */
@@ -274,12 +315,12 @@ export default function Skills() {
       const bx = rnd(i * 1.71 + 0.37) * w
       const by = rnd(i * 2.31 + 1.13) * h
       const tw = 0.45 + Math.sin(i * 91.3 + t * 0.22) * 0.25
-      const s  = i % 13 === 0 ? 2 : i % 5 === 0 ? 1.5 : 1
+      const s  = i % 13 === 0 ? 1.4 : 1
       const tint = i % 7 === 0 ? '190,212,255'
                  : i % 7 === 2 ? '255,236,208'
                  : i % 7 === 4 ? '210,228,255'
                  : '232,240,255'
-      ctx.fillStyle = `rgba(${tint},${Math.max(0.16, tw)})`
+      ctx.fillStyle = `rgba(${tint},${Math.max(0.16, tw) * 0.85})`
       ctx.fillRect(bx, by, s, s)
     }
 

@@ -1,42 +1,20 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import api from './services/api'
+import { getStoredTheme, applyTheme, clearTheme } from './theme'
+import type { Theme } from './theme'
 import type { Admin } from '../types/api'
+import './admin.css'
 
 function LoadingScreen() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-6"
-      style={{ background: '#050709' }}>
-      {/* Scanlines */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.12]"
-        style={{ background: 'repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.15) 3px,rgba(0,0,0,0.15) 4px)' }} />
-
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="flex flex-col items-center gap-5 relative z-10"
-      >
-        {/* Pixel spinner */}
-        <div className="relative w-14 h-14 flex items-center justify-center"
-          style={{ background: 'rgba(79,140,255,0.05)', border: '1px solid rgba(79,140,255,0.15)', clipPath: 'polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)' }}>
-          <div className="w-8 h-8 border-2 rounded-full animate-spin"
-            style={{ borderColor: 'rgba(79,140,255,0.15)', borderTopColor: '#4f8cff' }} />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-2 h-2 bg-[#4f8cff] animate-pulse" />
-          </div>
-        </div>
-
-        <p className="font-pixel text-[10px] tracking-widest animate-pulse"
-          style={{ color: 'rgba(79,140,255,0.5)' }}>
-          LOADING ADMIN PORTAL...
-        </p>
-      </motion.div>
-
-      {/* Corner tags */}
-      <div className="fixed top-4 left-4 font-pixel text-[8px] text-[rgba(79,140,255,0.15)] tracking-widest">ADMIN_PORTAL</div>
-      <div className="fixed bottom-4 right-4 font-pixel text-[8px] text-[rgba(79,140,255,0.1)]">v2.0.0</div>
+    <div className="admin-root">
+      <div className="admin-loading" style={{ minHeight: '100vh' }}>
+        <div className="admin-spinner" />
+        <p>Loading admin console…</p>
+      </div>
     </div>
   )
 }
@@ -44,6 +22,14 @@ function LoadingScreen() {
 function AdminApp() {
   const [admin, setAdmin] = useState<Admin | null>(null)
   const [loading, setLoading] = useState(true)
+  const [theme, setTheme] = useState<Theme>(getStoredTheme)
+
+  // Theme class lives on <html> so modals (teleported to <body>) inherit it.
+  // Remove it on unmount so leaving /admin never affects the portfolio.
+  useEffect(() => {
+    applyTheme(theme)
+    return () => clearTheme()
+  }, [theme])
 
   useEffect(() => { verifyAuth() }, [])
 
@@ -66,15 +52,18 @@ function AdminApp() {
     setAdmin(null)
   }
 
+  const toggleTheme = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'))
+
   if (loading) return <LoadingScreen />
 
   return (
-    <AnimatePresence mode="wait">
-      {admin
-        ? <Dashboard key="dashboard" admin={admin} onLogout={handleLogout} />
-        : <Login key="login" onLogin={setAdmin} />
-      }
-    </AnimatePresence>
+    <div className="admin-root">
+      <AnimatePresence mode="wait">
+        {admin
+          ? <Dashboard key="dashboard" admin={admin} onLogout={handleLogout} theme={theme} onToggleTheme={toggleTheme} />
+          : <Login key="login" onLogin={setAdmin} theme={theme} onToggleTheme={toggleTheme} />}
+      </AnimatePresence>
+    </div>
   )
 }
 

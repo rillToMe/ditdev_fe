@@ -1,137 +1,60 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogOut, FolderOpen, Award, TrendingUp, RefreshCw, Database } from 'lucide-react'
+import {
+  LayoutDashboard, FolderOpen, Award, TrendingUp, Database,
+  RefreshCw, LogOut, Menu, ChevronRight, Layers, Sun, Moon,
+} from 'lucide-react'
 import api from '../services/api'
 import type { Admin, Certificate, Project, Stat } from '../../types/api'
 import type { LucideIcon } from 'lucide-react'
-import type { ReactNode } from 'react'
+import type { Theme } from '../theme'
 import ProjectsManager from '../components/ProjectsManager'
 import CertificatesManager from '../components/CertificatesManager'
 import StatsManager from '../components/StatsManager'
 import RagManager from '../components/RagManager'
 
-const pixelClip = 'polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%)'
+type SectionKey = 'overview' | 'projects' | 'certificates' | 'stats' | 'rag'
 
-interface StatCardProps {
+interface NavItem {
+  key: SectionKey
   label: string
-  value: number
   icon: LucideIcon
-  color: string
-  glowColor: string
-  delay: number
 }
 
-function StatCard({ label, value, icon: Icon, color, glowColor, delay }: StatCardProps) {
-  return (
-    <motion.div
-      initial={{ scale: 0.92, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ delay }}
-      whileHover={{ y: -3 }}
-      className="relative overflow-hidden p-6"
-      style={{
-        background: `linear-gradient(135deg, ${color}08 0%, transparent 60%), #0a0e1a`,
-        border: `1px solid ${color}25`,
-        clipPath: 'polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,0 100%)',
-        boxShadow: `0 0 30px ${glowColor}10`,
-      }}
-    >
-      {/* Corner accent */}
-      <div className="absolute top-0 right-0 w-6 h-6 flex items-start justify-end"
-        style={{ background: `linear-gradient(135deg, transparent 50%, ${color}20 50%)` }} />
+const NAV_ITEMS: NavItem[] = [
+  { key: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { key: 'projects', label: 'Projects', icon: FolderOpen },
+  { key: 'certificates', label: 'Certificates', icon: Award },
+  { key: 'stats', label: 'Stats', icon: TrendingUp },
+  { key: 'rag', label: 'RAG Index', icon: Database },
+]
 
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="font-pixel text-[9px] tracking-widest mb-3" style={{ color: `${color}80` }}>
-            {label}
-          </p>
-          <motion.p
-            className="font-pixel text-4xl"
-            style={{ color, textShadow: `0 0 20px ${color}40` }}
-          >
-            {value}
-          </motion.p>
-        </div>
-        <Icon className="w-12 h-12 opacity-10" style={{ color }} />
-      </div>
-
-      {/* Bottom glow line */}
-      <div className="absolute bottom-0 left-0 right-0 h-px"
-        style={{ background: `linear-gradient(90deg, transparent, ${color}40, transparent)` }} />
-    </motion.div>
-  )
-}
-
-interface TabBtnProps {
-  active: boolean
-  onClick: () => void
-  icon: LucideIcon
-  label: string
-}
-
-function TabBtn({ active, onClick, icon: Icon, label }: TabBtnProps) {
-  return (
-    <button
-      onClick={onClick}
-      className="relative flex items-center gap-2 px-5 py-4 font-pixel text-[10px] tracking-widest transition-all duration-200"
-      style={{ color: active ? '#4f8cff' : 'rgba(148,163,184,0.4)' }}
-    >
-      <Icon className="w-3.5 h-3.5" />
-      {label}
-      {/* Active indicator */}
-      {active && (
-        <motion.div
-          layoutId="tab-indicator"
-          className="absolute bottom-0 left-0 right-0 h-0.5"
-          style={{ background: 'linear-gradient(90deg, transparent, #4f8cff, transparent)' }}
-        />
-      )}
-    </button>
-  )
-}
-
-interface IconBtnProps {
-  onClick?: () => void
-  disabled?: boolean
-  title?: string
-  children: ReactNode
-}
-
-function IconBtn({ onClick, disabled, title, children }: IconBtnProps) {
-  return (
-    <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      className="p-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-      style={{
-        background: 'rgba(79,140,255,0.05)',
-        border: '1px solid rgba(79,140,255,0.12)',
-        clipPath: pixelClip,
-        color: 'rgba(148,163,184,0.6)',
-      }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(79,140,255,0.1)'; e.currentTarget.style.borderColor = 'rgba(79,140,255,0.3)' }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(79,140,255,0.05)'; e.currentTarget.style.borderColor = 'rgba(79,140,255,0.12)' }}
-    >
-      {children}
-    </motion.button>
-  )
+const PAGE_META: Record<SectionKey, { title: string; sub: string }> = {
+  overview: { title: 'Overview', sub: 'A snapshot of your portfolio content' },
+  projects: { title: 'Projects', sub: 'Create, edit and remove portfolio projects' },
+  certificates: { title: 'Certificates', sub: 'Manage your achievements and credentials' },
+  stats: { title: 'Stats', sub: 'Numbers shown in the About section' },
+  rag: { title: 'RAG Index', sub: 'Knowledge the chatbot answers from' },
 }
 
 interface DashboardProps {
   admin: Admin
   onLogout: () => void
+  theme: Theme
+  onToggleTheme: () => void
 }
 
-export default function Dashboard({ admin, onLogout }: DashboardProps) {
-  const [activeTab, setActiveTab] = useState('projects')
+export default function Dashboard({ admin, onLogout, theme, onToggleTheme }: DashboardProps) {
+  const [active, setActive] = useState<SectionKey>('overview')
   const [projects, setProjects] = useState<Project[]>([])
   const [certificates, setCertificates] = useState<Certificate[]>([])
   const [stats, setStats] = useState<Stat[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+
+  // Sidebar UI state (collapsed on desktop, drawer on mobile)
+  const [collapsed, setCollapsed] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => { loadData() }, [])
 
@@ -154,7 +77,7 @@ export default function Dashboard({ admin, onLogout }: DashboardProps) {
     try {
       const [p, c, s] = await Promise.all([
         api.getProjects(), api.getCertificates(), api.getStats(),
-        new Promise(r => setTimeout(r, 500)),
+        new Promise(r => setTimeout(r, 400)),
       ])
       setProjects(p.data || [])
       setCertificates(c.data || [])
@@ -166,121 +89,273 @@ export default function Dashboard({ admin, onLogout }: DashboardProps) {
     }
   }
 
+  const selectSection = (key: SectionKey) => {
+    setActive(key)
+    setDrawerOpen(false)
+  }
+
+  const meta = PAGE_META[active]
+
+  const counts: Record<SectionKey, number | null> = {
+    overview: null,
+    projects: projects.length,
+    certificates: certificates.length,
+    stats: stats.length,
+    rag: null,
+  }
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen"
-      style={{ background: '#050709' }}
-    >
-      {/* Scanlines */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.12]"
-        style={{ background: 'repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.15) 3px,rgba(0,0,0,0.15) 4px)', zIndex: 0 }} />
+    <div className="admin-shell">
+      {/* Mobile drawer scrim */}
+      {drawerOpen && (
+        <button className="admin-drawer-scrim" aria-label="Close menu" onClick={() => setDrawerOpen(false)} />
+      )}
 
-      {/* Header */}
-      <header
-        className="sticky top-0 z-40 px-4 sm:px-8"
-        style={{ background: 'rgba(5,7,9,0.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(79,140,255,0.1)' }}
+      {/* Sidebar */}
+      <aside
+        className={`admin-sidebar${collapsed ? ' is-collapsed' : ''}${drawerOpen ? ' is-open' : ''}`}
       >
-        <div className="max-w-7xl mx-auto flex items-center justify-between h-16">
-          {/* Left: title */}
-          <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="flex items-center gap-3">
-            <div className="w-1 h-6 bg-[#4f8cff]" style={{ clipPath: 'polygon(0 0,100% 0,100% 100%,0 100%)' }} />
-            <div>
-              <h1 className="font-pixel text-xs tracking-widest text-[#e2e8f0]">PORTFOLIO ADMIN</h1>
-              <p className="font-mono text-[10px] text-[rgba(148,163,184,0.35)]">
-                welcome,<span style={{ color: '#ba8d13' }}> KING </span><span style={{ color: '#4f8cff' }}>{admin.username}</span>
-              </p>
+        {/* Brand */}
+        <div className="admin-brand">
+          <div className="admin-brand-mark"><Layers size={20} /></div>
+          <div className="admin-brand-text">
+            <div className="admin-brand-title">Admin Console</div>
+            <div className="admin-brand-sub">Portfolio Manager</div>
+          </div>
+        </div>
+
+        {/* Nav */}
+        <nav className="admin-nav">
+          <div className="admin-nav-label">Content</div>
+          {NAV_ITEMS.map(({ key, label, icon: Icon }) => {
+            const isActive = active === key
+            const count = counts[key]
+            return (
+              <button
+                key={key}
+                onClick={() => selectSection(key)}
+                className={`admin-nav-item${isActive ? ' is-active' : ''}`}
+                title={collapsed ? label : undefined}
+              >
+                <Icon className="admin-nav-icon" size={18} />
+                <span className="admin-nav-text">{label}</span>
+                {count !== null && <span className="admin-nav-badge admin-num">{count}</span>}
+              </button>
+            )
+          })}
+        </nav>
+
+        {/* Footer */}
+        <div className="admin-sidebar-footer">
+          <div className="admin-user">
+            <div className="admin-avatar">
+              {admin.username.slice(0, 2).toUpperCase()}
             </div>
-          </motion.div>
-
-          {/* Right: actions */}
-          <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="flex items-center gap-2">
-            {/* Refresh */}
-            <IconBtn onClick={handleRefresh} disabled={refreshing} title="Refresh Data">
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-[#4f8cff]' : ''}`} />
-            </IconBtn>
-
-            {/* Logout */}
-            <motion.button
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              onClick={onLogout}
-              className="flex items-center gap-2 px-4 py-2 font-pixel text-[10px] tracking-widest transition-all duration-200"
-              style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', color: 'rgba(239,68,68,0.7)', clipPath: pixelClip }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.12)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.06)'}
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">LOGOUT</span>
-            </motion.button>
-          </motion.div>
+            <div className="admin-user-info">
+              <div className="admin-user-name">{admin.username}</div>
+              <div className="admin-user-role">Administrator</div>
+            </div>
+          </div>
+          <button onClick={onLogout} className="admin-btn admin-btn--danger admin-btn--block">
+            <LogOut size={16} />
+            {!collapsed && 'Log out'}
+          </button>
         </div>
-      </header>
+      </aside>
 
-      {/* Body */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
-
-        {/* Stat cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <StatCard label="TOTAL PROJECTS" value={projects.length} icon={FolderOpen} color="#4f8cff" glowColor="#4f8cff" delay={0.1} />
-          <StatCard label="TOTAL CERTIFICATES" value={certificates.length} icon={Award} color="#00d4ff" glowColor="#00d4ff" delay={0.2} />
-        </div>
-
-        {/* Tab panel */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          style={{
-            background: '#0a0e1a',
-            border: '1px solid rgba(79,140,255,0.12)',
-            clipPath: 'polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,0 100%)',
-          }}
-        >
-          {/* Tabs header */}
-          <div
-            className="flex items-center gap-1 px-2"
-            style={{ borderBottom: '1px solid rgba(79,140,255,0.08)', background: 'rgba(79,140,255,0.02)' }}
+      {/* Main column */}
+      <div className={`admin-main${collapsed ? ' is-collapsed' : ''}`}>
+        {/* Topbar */}
+        <header className="admin-topbar">
+          <button
+            className="admin-iconbtn"
+            onClick={() => {
+              if (window.matchMedia('(max-width: 1023px)').matches) setDrawerOpen(v => !v)
+              else setCollapsed(v => !v)
+            }}
+            aria-label="Toggle sidebar"
+            title="Toggle sidebar"
           >
-            <TabBtn active={activeTab === 'projects'} onClick={() => setActiveTab('projects')} icon={FolderOpen} label="PROJECTS" />
-            <TabBtn active={activeTab === 'certificates'} onClick={() => setActiveTab('certificates')} icon={Award} label="CERTIFICATES" />
-            <TabBtn active={activeTab === 'stats'} onClick={() => setActiveTab('stats')} icon={TrendingUp} label="STATS" />
-            <TabBtn active={activeTab === 'rag'} onClick={() => setActiveTab('rag')} icon={Database} label="RAG" />
+            <Menu size={18} />
+          </button>
+
+          <div className="min-w-0">
+            <div className="admin-topbar-title truncate">{meta.title}</div>
+            <div className="admin-topbar-sub truncate">{meta.sub}</div>
           </div>
 
-          {/* Tab content */}
-          <div className="p-6">
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-24 gap-4">
-                <div className="relative">
-                  <div className="w-12 h-12 border-2 rounded-full animate-spin"
-                    style={{ borderColor: 'rgba(79,140,255,0.15)', borderTopColor: '#4f8cff' }} />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-2 h-2 bg-[#4f8cff] animate-pulse" />
-                  </div>
-                </div>
-                <p className="font-pixel text-[10px] tracking-widest text-[rgba(148,163,184,0.3)]">LOADING DATA...</p>
-              </div>
-            ) : (
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTab}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {activeTab === 'projects' && <ProjectsManager projects={projects} onUpdate={loadData} />}
-                  {activeTab === 'certificates' && <CertificatesManager certificates={certificates} onUpdate={loadData} />}
-                  {activeTab === 'stats' && <StatsManager stats={stats} onUpdate={loadData} />}
-                  {activeTab === 'rag' && <RagManager />}
-                </motion.div>
-              </AnimatePresence>
-            )}
+          <div className="admin-topbar-actions">
+            <button
+              className="admin-iconbtn"
+              onClick={onToggleTheme}
+              title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+            </button>
+            <button
+              className="admin-iconbtn"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              title="Refresh data"
+              aria-label="Refresh data"
+            >
+              <RefreshCw size={17} className={refreshing ? 'animate-spin' : ''} />
+            </button>
           </div>
-        </motion.div>
+        </header>
+
+        {/* Content */}
+        <main className="admin-content">
+          {loading ? (
+            <div className="admin-loading">
+              <div className="admin-spinner" />
+              <p>Loading data…</p>
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={active}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.18 }}
+              >
+                {active === 'overview' && (
+                  <Overview
+                    admin={admin}
+                    projects={projects}
+                    certificates={certificates}
+                    stats={stats}
+                    onNavigate={selectSection}
+                  />
+                )}
+                {active === 'projects' && <ProjectsManager projects={projects} onUpdate={loadData} />}
+                {active === 'certificates' && <CertificatesManager certificates={certificates} onUpdate={loadData} />}
+                {active === 'stats' && <StatsManager stats={stats} onUpdate={loadData} />}
+                {active === 'rag' && <RagManager />}
+              </motion.div>
+            </AnimatePresence>
+          )}
+        </main>
+      </div>
+    </div>
+  )
+}
+
+/* ── Overview page ─────────────────────────────────────────────────────── */
+
+interface OverviewProps {
+  admin: Admin
+  projects: Project[]
+  certificates: Certificate[]
+  stats: Stat[]
+  onNavigate: (key: SectionKey) => void
+}
+
+function Overview({ admin, projects, certificates, stats, onNavigate }: OverviewProps) {
+  const kpis = [
+    { key: 'projects' as const, label: 'Projects', value: projects.length, icon: FolderOpen },
+    { key: 'certificates' as const, label: 'Certificates', value: certificates.length, icon: Award },
+    { key: 'stats' as const, label: 'Stats', value: stats.length, icon: TrendingUp },
+  ]
+
+  const recent = [...projects]
+    .sort((a, b) => (b.id ?? 0) - (a.id ?? 0))
+    .slice(0, 5)
+
+  return (
+    <div className="space-y-6">
+      {/* Welcome banner */}
+      <div
+        className="admin-card"
+        style={{
+          padding: '20px 22px',
+          background: 'linear-gradient(180deg, var(--a-tint) 0%, transparent 100%)',
+          borderColor: 'var(--a-accent-border)',
+        }}
+      >
+        <h2 className="admin-page-title">Welcome back, {admin.username}</h2>
+        <p className="admin-page-sub" style={{ maxWidth: 620 }}>
+          Here's the current state of your portfolio. Use the sidebar to manage projects,
+          certificates, stats and the chatbot knowledge index.
+        </p>
       </div>
 
-    </motion.div>
+      {/* KPI cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {kpis.map(({ key, label, value, icon: Icon }, i) => (
+          <motion.button
+            key={key}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.06 }}
+            onClick={() => onNavigate(key)}
+            className="admin-kpi text-left"
+          >
+            <div className="admin-kpi-top">
+              <span className="admin-kpi-label">{label}</span>
+              <Icon className="admin-kpi-icon" size={18} />
+            </div>
+            <div className="admin-kpi-value admin-num">{value}</div>
+            <div className="admin-kpi-sub">Manage {label.toLowerCase()}</div>
+          </motion.button>
+        ))}
+      </div>
+
+      {/* Recent projects */}
+      <div className="admin-card admin-card-pad">
+        <div className="admin-panel-head" style={{ marginBottom: 14 }}>
+          <div>
+            <div className="admin-page-title" style={{ fontSize: 16 }}>Recent projects</div>
+            <div className="admin-page-sub">Your latest additions</div>
+          </div>
+          <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => onNavigate('projects')}>
+            View all <ChevronRight size={14} />
+          </button>
+        </div>
+
+        {recent.length === 0 ? (
+          <div className="admin-empty">
+            <FolderOpen className="admin-empty-icon" size={34} />
+            <div className="admin-empty-title">No projects yet</div>
+            <div className="admin-empty-text">Add your first project to get started.</div>
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            {recent.map((p, i) => (
+              <div
+                key={p.id}
+                className="flex items-center gap-3"
+                style={{
+                  padding: '12px 4px',
+                  borderTop: i === 0 ? 'none' : '1px solid var(--a-border-soft)',
+                }}
+              >
+                <div
+                  style={{
+                    width: 38, height: 38, borderRadius: 9, flexShrink: 0,
+                    display: 'grid', placeItems: 'center',
+                    background: 'var(--a-accent-soft)', border: '1px solid var(--a-accent-border)',
+                    overflow: 'hidden', color: 'var(--a-accent)',
+                  }}
+                >
+                  <FolderOpen size={17} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="admin-item-title" style={{ marginBottom: 2 }}>{p.title}</div>
+                  <div className="admin-item-desc" style={{ marginBottom: 0, WebkitLineClamp: 1 }}>
+                    {p.description || 'No description'}
+                  </div>
+                </div>
+                {p.tags && p.tags.length > 0 && (
+                  <span className="admin-chip" style={{ flexShrink: 0 }}>{p.tags[0]}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

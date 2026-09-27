@@ -3,16 +3,19 @@ import { motion } from 'framer-motion'
 import Cropper from 'react-easy-crop'
 import type { Area, Point } from 'react-easy-crop'
 import { X, Check, RotateCw, ZoomIn } from 'lucide-react'
-
-const pixelClip = 'polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%)'
-
-// Slider styling now lives in index.css (.pixel-slider).
+import { btn } from '../ui'
 
 interface ImageCropperProps {
   image: string
   onComplete: (blob: Blob) => void
   onCancel: () => void
   aspectRatio?: number
+}
+
+const sliderStyle: React.CSSProperties = {
+  width: '100%',
+  accentColor: 'var(--a-accent)',
+  cursor: 'pointer',
 }
 
 export default function ImageCropper({ image, onComplete, onCancel, aspectRatio = 16 / 9 }: ImageCropperProps) {
@@ -38,36 +41,23 @@ export default function ImageCropper({ image, onComplete, onCancel, aspectRatio 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] flex flex-col"
-      style={{ background: '#050709' }}
+      className="fixed inset-0 z-[90] flex flex-col"
+      style={{ background: 'var(--a-bg)' }}
     >
       {/* Header */}
       <div
-        className="flex-shrink-0 flex items-center justify-between px-6 py-4"
-        style={{ background: '#0a0e1a', borderBottom: '1px solid rgba(79,140,255,0.12)' }}
+        className="flex-shrink-0 flex items-center justify-between"
+        style={{ padding: '14px 20px', background: 'var(--a-surface)', borderBottom: '1px solid var(--a-border-soft)' }}
       >
-        <div className="flex items-center gap-3">
-          <div className="flex gap-1">
-            <div className="w-2 h-2 bg-[#4f8cff]" />
-            <div className="w-2 h-2 bg-[#00d4ff]/60" />
-          </div>
-          <div>
-            <p className="font-pixel text-xs tracking-widest text-[#e2e8f0]">// CROP_IMAGE</p>
-            <p className="font-mono text-[9px] mt-0.5" style={{ color: 'rgba(148,163,184,0.35)' }}>
-              Drag to reposition · scroll to zoom
-            </p>
-          </div>
+        <div>
+          <p style={{ fontSize: 15, fontWeight: 650 }}>Crop image</p>
+          <p style={{ fontSize: 12, color: 'var(--a-muted)', marginTop: 2 }}>
+            Drag to reposition · scroll to zoom
+          </p>
         </div>
-        <motion.button
-          whileHover={{ rotate: 90, scale: 1.1 }} whileTap={{ scale: 0.9 }}
-          onClick={onCancel}
-          className="p-1.5 transition-colors"
-          style={{ color: 'rgba(148,163,184,0.4)', background: 'rgba(79,140,255,0.05)', border: '1px solid rgba(79,140,255,0.1)', clipPath: pixelClip }}
-          onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(148,163,184,0.8)'}
-          onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(148,163,184,0.4)'}
-        >
-          <X className="w-5 h-5" />
-        </motion.button>
+        <button className="admin-iconbtn" onClick={onCancel} aria-label="Cancel crop">
+          <X size={18} />
+        </button>
       </div>
 
       {/* Cropper area */}
@@ -83,64 +73,52 @@ export default function ImageCropper({ image, onComplete, onCancel, aspectRatio 
           onRotationChange={setRotation}
           onCropComplete={onCropComplete}
           style={{
-            containerStyle: { background: '#050709' },
-            cropAreaStyle: { border: '2px solid rgba(79,140,255,0.6)', boxShadow: '0 0 0 9999px rgba(5,7,9,0.75)' },
+            containerStyle: { background: 'var(--a-bg)' },
+            cropAreaStyle: { border: '2px solid var(--a-accent)', boxShadow: '0 0 0 9999px rgba(5,7,10,0.72)' },
           }}
         />
       </div>
 
       {/* Controls */}
       <div
-        className="flex-shrink-0 px-6 py-6"
-        style={{ background: '#0a0e1a', borderTop: '1px solid rgba(79,140,255,0.1)' }}
+        className="flex-shrink-0"
+        style={{ padding: '20px 20px 24px', background: 'var(--a-surface)', borderTop: '1px solid var(--a-border-soft)' }}
       >
-        <div className="max-w-2xl mx-auto space-y-5">
+        <div className="mx-auto space-y-5" style={{ maxWidth: 640 }}>
 
           {/* Zoom */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 font-pixel text-[9px] tracking-widest" style={{ color: 'rgba(79,140,255,0.6)' }}>
-                <ZoomIn className="w-3.5 h-3.5" /> ZOOM
+              <span className="inline-flex items-center gap-2" style={{ fontSize: 13, fontWeight: 600, color: 'var(--a-text-dim)' }}>
+                <ZoomIn size={15} /> Zoom
               </span>
-              <span className="font-mono text-[10px]" style={{ color: 'rgba(148,163,184,0.4)' }}>{Math.round(zoom * 100)}%</span>
+              <span className="admin-num" style={{ fontSize: 12.5, color: 'var(--a-muted)' }}>{Math.round(zoom * 100)}%</span>
             </div>
             <input type="range" min={1} max={3} step={0.1} value={zoom}
-              onChange={(e) => setZoom(+e.target.value)} className="pixel-slider" />
+              onChange={(e) => setZoom(+e.target.value)} style={sliderStyle} />
           </div>
 
           {/* Rotation */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 font-pixel text-[9px] tracking-widest" style={{ color: 'rgba(79,140,255,0.6)' }}>
-                <RotateCw className="w-3.5 h-3.5" /> ROTATE
+              <span className="inline-flex items-center gap-2" style={{ fontSize: 13, fontWeight: 600, color: 'var(--a-text-dim)' }}>
+                <RotateCw size={15} /> Rotate
               </span>
-              <span className="font-mono text-[10px]" style={{ color: 'rgba(148,163,184,0.4)' }}>{rotation}°</span>
+              <span className="admin-num" style={{ fontSize: 12.5, color: 'var(--a-muted)' }}>{rotation}°</span>
             </div>
             <input type="range" min={0} max={360} step={1} value={rotation}
-              onChange={(e) => setRotation(+e.target.value)} className="pixel-slider" />
+              onChange={(e) => setRotation(+e.target.value)} style={sliderStyle} />
           </div>
 
           {/* Action buttons */}
-          <div className="flex gap-3 pt-2">
-            <motion.button
-              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-              onClick={onCancel}
-              className="flex-1 py-3 font-pixel text-[10px] tracking-widest border border-[rgba(148,163,184,0.15)] text-[rgba(148,163,184,0.4)] hover:text-[rgba(148,163,184,0.7)] hover:border-[rgba(148,163,184,0.3)] transition-all"
-              style={{ clipPath: pixelClip }}
-            >
-              CANCEL
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-              onClick={createCroppedImage}
-              className="flex-1 flex items-center justify-center gap-2 py-3 font-pixel text-[10px] tracking-widest transition-all duration-200"
-              style={{ background: 'rgba(79,140,255,0.12)', border: '1px solid rgba(79,140,255,0.35)', color: '#4f8cff', clipPath: pixelClip }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(79,140,255,0.2)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(79,140,255,0.12)'}
-            >
-              <Check className="w-4 h-4" />
-              APPLY CROP
-            </motion.button>
+          <div className="flex gap-3 pt-1">
+            <button onClick={onCancel} className={btn.ghost + ' flex-1'}>
+              Cancel
+            </button>
+            <button onClick={createCroppedImage} className={btn.primary + ' flex-1'}>
+              <Check size={16} />
+              Apply crop
+            </button>
           </div>
         </div>
       </div>

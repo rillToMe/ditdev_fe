@@ -63,7 +63,7 @@ export function AchievementsProvider({ children }: { children: ReactNode }) {
     setToasts(prev => [...prev, { id: tid, title: def.title, hint: def.hint, xp: def.xp }])
     window.setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== tid))
-    }, 4200)
+    }, 3000)
   }, [])
 
   const visit = useCallback((id: SectionId) => {

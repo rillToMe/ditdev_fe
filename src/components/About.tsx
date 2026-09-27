@@ -41,17 +41,19 @@ const INVENTORY: InventoryItem[] = [
 ]
 
 /* ── Attributes ────────────────────────────────────────────────────────
-   Rendered as real bars with a ceiling, instead of the previous "∞"
-   placeholders that ticked on nothing. */
-interface AttributeMeta { max: number; color: string; label?: string }
+   Bars get their scale + accent from this map, but the LABEL always comes
+   from the admin-managed stat (stat.label). We only fall back to these
+   labels if the API returns an empty one, so a rename in the admin panel
+   is reflected here instead of being silently overwritten. */
+interface AttributeMeta { max: number; color: string; label: string }
 
 const ATTRIBUTE_META: Record<string, AttributeMeta> = {
-  months_studying:  { max: 36,  color: '#a29bfe', label: 'Experience'    },
-  experiments_done: { max: 30,  color: '#00d4ff', label: 'Experiments'   },
-  total_projects:   { max: 20,  color: '#4f8cff', label: 'Quests Shipped'},
-  years_coding:     { max: 6,   color: '#61dafb', label: 'Years Coding'  },
-  bugs_fixed:       { max: 200, color: '#ff7675', label: 'Bugs Slain'    },
-  cups_of_coffee:   { max: 1000,color: '#fdcb6e', label: 'Coffee Consumed'},
+  months_studying:  { max: 36,  color: '#a29bfe', label: 'Months Studying'  },
+  experiments_done: { max: 30,  color: '#00d4ff', label: 'Experiments Done' },
+  total_projects:   { max: 20,  color: '#4f8cff', label: 'Total Projects'   },
+  years_coding:     { max: 6,   color: '#61dafb', label: 'Years Coding'     },
+  bugs_fixed:       { max: 200, color: '#ff7675', label: 'Bugs Fixed'      },
+  cups_of_coffee:   { max: 1000,color: '#fdcb6e', label: 'Cups of Coffee'  },
 }
 
 interface AboutStat { key: string; value: number; label: string }
@@ -63,9 +65,10 @@ const FALLBACK_STATS: AboutStat[] = [
 ]
 
 function AttributeBar({ stat, index }: { stat: AboutStat; index: number }) {
-  const meta  = ATTRIBUTE_META[stat.key] || { max: Math.max(stat.value, 1), color: '#4f8cff' }
+  const meta  = ATTRIBUTE_META[stat.key] || { max: Math.max(stat.value, 1), color: '#4f8cff', label: stat.label }
   const pct   = Math.max(4, Math.min(stat.value / meta.max, 1) * 100)
-  const label = meta.label || stat.label
+  // Admin-managed label wins; ATTRIBUTE_META label is only a fallback.
+  const label = stat.label?.trim() || meta.label
 
   return (
     <motion.div variants={slideIn('right', 20)} className="group">

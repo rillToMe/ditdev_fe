@@ -2,41 +2,12 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Upload, Trash2, FileText, ExternalLink } from 'lucide-react'
 import api, { getImageUrl } from '../services/api'
+import { btn, inputCls, labelCls } from '../ui'
 import type { Certificate, CertificateInput } from '../../types/api'
 import ImageCropper from './ImageCropper'
 import Portal from './Portal'
 import DiscardDialog from './DiscardDialog'
 import type { ReactNode } from 'react'
-
-const S = {
-  input: [
-    'w-full px-4 py-3 text-sm font-mono',
-    'bg-[#0a0e1a] border border-[rgba(79,140,255,0.15)]',
-    'text-[#e2e8f0] placeholder-[rgba(148,163,184,0.35)]',
-    'focus:outline-none focus:border-[rgba(79,140,255,0.5)] focus:bg-[#0d1220]',
-    'transition-all duration-200',
-  ].join(' '),
-
-  label: 'block text-[11px] font-pixel tracking-widest text-[rgba(148,163,184,0.6)] mb-2 uppercase',
-
-  btnPrimary: [
-    'flex-1 px-6 py-3 font-pixel text-xs tracking-widest',
-    'bg-[rgba(79,140,255,0.12)] border border-[rgba(79,140,255,0.35)]',
-    'text-[#4f8cff] hover:bg-[rgba(79,140,255,0.2)] hover:border-[rgba(79,140,255,0.6)]',
-    'disabled:opacity-40 disabled:cursor-not-allowed',
-    'transition-all duration-200',
-  ].join(' '),
-
-  btnGhost: [
-    'flex-1 px-6 py-3 font-pixel text-xs tracking-widest',
-    'border border-[rgba(148,163,184,0.15)] text-[rgba(148,163,184,0.5)]',
-    'hover:border-[rgba(148,163,184,0.3)] hover:text-[rgba(148,163,184,0.8)]',
-    'transition-all duration-200',
-  ].join(' '),
-}
-
-const pixelClip = 'polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%)'
-const pixelClipLg = 'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)'
 
 interface CertificateFormData {
   title: string
@@ -47,24 +18,17 @@ interface CertificateFormData {
   pdf_file: string
 }
 
-function PixelSpinner({ color = '#4f8cff' }: { color?: string }) {
-  return (
-    <div className="w-4 h-4 border-2 rounded-full animate-spin"
-      style={{ borderColor: `${color}30`, borderTopColor: color }} />
-  )
+function Spinner() {
+  return <span className="admin-spinner admin-spinner--sm" />
 }
 
-function Field({ label, delay = 0, children, hint }: { label: string; delay?: number; children: ReactNode; hint?: string }) {
+function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   return (
-    <motion.div
-      initial={{ x: -16, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ delay, duration: 0.3 }}
-    >
-      <label className={S.label}>{label}</label>
+    <div>
+      <label className={labelCls}>{label}</label>
       {children}
-      {hint && <p className="mt-1.5 font-mono text-[10px] text-[rgba(148,163,184,0.35)]">{hint}</p>}
-    </motion.div>
+      {hint && <p className="admin-hint">{hint}</p>}
+    </div>
   )
 }
 
@@ -209,272 +173,208 @@ export default function CertificateModal({ certificate, onClose, onSuccess }: Ce
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="admin-overlay"
           onClick={handleAttemptClose}
         >
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+          <div className="admin-overlay-backdrop" />
 
           {/* Modal */}
           <motion.div
-            initial={{ scale: 0.94, y: 24, opacity: 0 }}
+            initial={{ scale: 0.96, y: 18, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0.94, y: 24, opacity: 0 }}
-            transition={{ type: 'spring', damping: 22, stiffness: 300 }}
+            exit={{ scale: 0.96, y: 18, opacity: 0 }}
+            transition={{ type: 'spring', damping: 24, stiffness: 300 }}
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            className="relative w-full max-w-2xl max-h-[90vh] flex flex-col"
-            style={{
-              background: 'linear-gradient(135deg, #0a0e1a 0%, #0d1220 100%)',
-              border: '1px solid rgba(79,140,255,0.18)',
-              clipPath: pixelClipLg,
-              boxShadow: '0 0 60px rgba(79,140,255,0.08), 0 32px 64px rgba(0,0,0,0.6)',
-            }}
+            className="admin-modal"
+            style={{ maxWidth: 672 }}
           >
             {/* Header */}
-            <div
-              className="flex items-center justify-between px-6 py-4 flex-shrink-0"
-              style={{ borderBottom: '1px solid rgba(79,140,255,0.1)', background: 'rgba(79,140,255,0.03)' }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-[#00d4ff]" style={{ clipPath: 'polygon(0 0,100% 0,100% 100%,0 100%)' }} />
-                  <div className="w-2 h-2 bg-[#4f8cff]/60" style={{ clipPath: 'polygon(0 0,100% 0,100% 100%,0 100%)' }} />
-                </div>
-                <h2 className="font-pixel text-xs tracking-widest text-[#e2e8f0]">
-                  {certificate ? '// EDIT_CERTIFICATE' : '// NEW_CERTIFICATE'}
-                </h2>
-              </div>
-              <motion.button
-                whileHover={{ rotate: 90, scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={handleAttemptClose}
-                className="p-1.5 text-[rgba(148,163,184,0.4)] hover:text-[rgba(148,163,184,0.8)] transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </motion.button>
+            <div className="admin-modal-head">
+              <h2 className="admin-modal-title">
+                {certificate ? 'Edit certificate' : 'New certificate'}
+              </h2>
+              <button className="admin-iconbtn" style={{ width: 32, height: 32 }} onClick={handleAttemptClose} aria-label="Close">
+                <X size={16} />
+              </button>
             </div>
 
             {/* Form */}
-            <form
-              onSubmit={handleSubmit}
-              className="flex-1 overflow-y-auto px-6 py-5 space-y-5"
-              style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(79,140,255,0.2) transparent' }}
-            >
-              {/* Title */}
-              <Field label="Title *" delay={0.05}>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData(p => ({ ...p, title: e.target.value }))}
-                  className={S.input}
-                  style={{ clipPath: pixelClip }}
-                  placeholder="Certificate title"
-                  required
-                />
-              </Field>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+              <div className="admin-modal-body space-y-5">
 
-              {/* Provider */}
-              <Field label="Provider *" delay={0.1}>
-                <input
-                  type="text"
-                  value={formData.provider}
-                  onChange={(e) => setFormData(p => ({ ...p, provider: e.target.value }))}
-                  className={S.input}
-                  style={{ clipPath: pixelClip }}
-                  placeholder="e.g. Google, Coursera, Udemy"
-                  required
-                />
-              </Field>
+                {/* Title */}
+                <Field label="Title *">
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData(p => ({ ...p, title: e.target.value }))}
+                    className={inputCls}
+                    placeholder="Certificate title"
+                    required
+                  />
+                </Field>
 
-              {/* Thumbnail */}
-              <Field label="Thumbnail" delay={0.15}>
-                <div className="space-y-3">
-                  <label
-                    className="flex items-center gap-2 px-4 py-3 cursor-pointer transition-all duration-200"
-                    style={{
-                      background: 'rgba(79,140,255,0.06)',
-                      border: '1px dashed rgba(79,140,255,0.25)',
-                      clipPath: pixelClip,
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(79,140,255,0.12)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(79,140,255,0.06)'}
-                  >
-                    <Upload className="w-4 h-4 text-[rgba(79,140,255,0.6)]" />
-                    <span className="font-pixel text-[10px] tracking-widest text-[rgba(79,140,255,0.7)]">
-                      {uploading ? 'UPLOADING...' : 'CHOOSE_IMAGE'}
-                    </span>
-                    <input type="file" accept="image/*" onChange={handleImageSelect} className="hidden" disabled={uploading} />
-                  </label>
+                {/* Provider */}
+                <Field label="Provider *">
+                  <input
+                    type="text"
+                    value={formData.provider}
+                    onChange={(e) => setFormData(p => ({ ...p, provider: e.target.value }))}
+                    className={inputCls}
+                    placeholder="e.g. Google, Coursera, Udemy"
+                    required
+                  />
+                </Field>
 
-                  {uploading && (
-                    <div className="flex items-center gap-2">
-                      <PixelSpinner />
-                      <span className="font-mono text-xs text-[rgba(79,140,255,0.6)]">uploading image...</span>
-                    </div>
-                  )}
-
-                  {formData.thumbnail && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="relative group overflow-hidden"
-                      style={{ clipPath: pixelClip }}
-                    >
-                      <img src={getImageUrl(formData.thumbnail) || undefined} alt="Preview" className="w-full h-44 object-cover" />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                        <span className="font-pixel text-[10px] text-white/80 tracking-widest">PREVIEW</span>
-                        <button
-                          type="button"
-                          onClick={() => { dropUpload(formData.thumbnail, 'certificates', certificate?.thumbnail); setFormData(p => ({ ...p, thumbnail: '' })) }}
-                          className="p-1.5 bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/40 transition"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                      <div className="absolute top-0 right-0 w-4 h-4 bg-[#00d4ff]/20 border-l border-b border-[#00d4ff]/30" />
-                    </motion.div>
-                  )}
-                </div>
-              </Field>
-
-              {/* PDF Upload */}
-              <Field label={`Certificate PDF${!certificate ? ' *' : ''}`} delay={0.2}>
-                <div className="space-y-3">
-                  {/* Upload button - only show if no PDF yet */}
-                  {!formData.pdf_file && (
-                    <label
-                      className="flex items-center gap-2 px-4 py-3 cursor-pointer transition-all duration-200"
-                      style={{
-                        background: 'rgba(0,212,255,0.04)',
-                        border: '1px dashed rgba(0,212,255,0.2)',
-                        clipPath: pixelClip,
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,212,255,0.09)'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0,212,255,0.04)'}
-                    >
-                      <FileText className="w-4 h-4 text-[rgba(0,212,255,0.6)]" />
-                      <span className="font-pixel text-[10px] tracking-widest text-[rgba(0,212,255,0.7)]">
-                        {uploadingPDF ? 'UPLOADING...' : 'UPLOAD_PDF'}
-                      </span>
-                      <span className="ml-auto font-mono text-[9px] text-[rgba(148,163,184,0.3)]">MAX 10MB</span>
-                      <input type="file" accept="application/pdf" onChange={handlePDFSelect} className="hidden" disabled={uploadingPDF} />
+                {/* Thumbnail */}
+                <Field label="Thumbnail">
+                  <div className="space-y-3">
+                    <label className="admin-dropzone">
+                      <Upload size={16} />
+                      <span>{uploading ? 'Uploading…' : 'Choose image'}</span>
+                      <input type="file" accept="image/*" onChange={handleImageSelect} className="hidden" disabled={uploading} />
                     </label>
-                  )}
 
-                  {/* Upload progress */}
-                  {uploadingPDF && (
-                    <div className="flex items-center gap-2">
-                      <PixelSpinner color="#00d4ff" />
-                      <span className="font-mono text-xs text-[rgba(0,212,255,0.6)]">uploading PDF...</span>
-                    </div>
-                  )}
-
-                  {/* PDF success card */}
-                  {formData.pdf_file && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="flex items-center gap-3 px-4 py-3"
-                      style={{
-                        background: 'rgba(0,212,255,0.04)',
-                        border: '1px solid rgba(0,212,255,0.2)',
-                        clipPath: pixelClip,
-                      }}
-                    >
-                      {/* Icon */}
-                      <div className="p-1.5 flex-shrink-0" style={{ background: 'rgba(0,212,255,0.1)', clipPath: pixelClip }}>
-                        <FileText className="w-4 h-4 text-[#00d4ff]" />
+                    {uploading && (
+                      <div className="flex items-center gap-2" style={{ fontSize: 13, color: 'var(--a-muted)' }}>
+                        <Spinner /> Uploading image…
                       </div>
+                    )}
 
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-pixel text-[10px] tracking-widest text-[rgba(0,212,255,0.8)]">PDF UPLOADED</p>
-                        <p className="font-mono text-[10px] text-[rgba(148,163,184,0.4)] truncate mt-0.5">
-                          {formData.pdf_file.split('/').pop()}
-                        </p>
+                    {formData.thumbnail && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="relative group overflow-hidden"
+                        style={{ borderRadius: 'var(--a-radius-sm)', border: '1px solid var(--a-border)' }}
+                      >
+                        <img src={getImageUrl(formData.thumbnail) || undefined} alt="Preview"
+                          className="w-full object-cover" style={{ height: 176, display: 'block' }} />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                          <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 600 }}>Preview</span>
+                          <button
+                            type="button"
+                            className={btn.dangerSm}
+                            onClick={() => { dropUpload(formData.thumbnail, 'certificates', certificate?.thumbnail); setFormData(p => ({ ...p, thumbnail: '' })) }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                </Field>
+
+                {/* PDF Upload */}
+                <Field label={`Certificate PDF${!certificate ? ' *' : ''}`}>
+                  <div className="space-y-3">
+                    {!formData.pdf_file && (
+                      <label className="admin-dropzone">
+                        <FileText size={16} />
+                        <span>{uploadingPDF ? 'Uploading…' : 'Upload PDF'}</span>
+                        <span className="admin-hint" style={{ marginLeft: 'auto', marginTop: 0 }}>Max 10MB</span>
+                        <input type="file" accept="application/pdf" onChange={handlePDFSelect} className="hidden" disabled={uploadingPDF} />
+                      </label>
+                    )}
+
+                    {uploadingPDF && (
+                      <div className="flex items-center gap-2" style={{ fontSize: 13, color: 'var(--a-muted)' }}>
+                        <Spinner /> Uploading PDF…
                       </div>
+                    )}
 
-                      {/* Actions */}
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <a
-                          href={formData.pdf_file}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-1.5 text-[rgba(0,212,255,0.5)] hover:text-[#00d4ff] hover:bg-[rgba(0,212,255,0.1)] transition-all"
-                          style={{ clipPath: pixelClip }}
-                          title="View PDF"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
-                        <button
-                          type="button"
-                          onClick={() => { dropUpload(formData.pdf_file, 'pdf_certif', certificate?.pdf_file); setFormData(p => ({ ...p, pdf_file: '' })) }}
-                          className="p-1.5 text-red-500/50 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                          style={{ clipPath: pixelClip }}
-                          title="Remove PDF"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
-              </Field>
+                    {formData.pdf_file && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex items-center gap-3"
+                        style={{
+                          padding: '12px 14px',
+                          background: 'var(--a-bg-soft)',
+                          border: '1px solid var(--a-border)',
+                          borderRadius: 'var(--a-radius-sm)',
+                        }}
+                      >
+                        <div style={{ width: 34, height: 34, flexShrink: 0, display: 'grid', placeItems: 'center', borderRadius: 6, background: 'var(--a-surface-2)', border: '1px solid var(--a-border)', color: 'var(--a-text-dim)' }}>
+                          <FileText size={16} />
+                        </div>
 
-              {/* Issue Date */}
-              <Field label="Issue Date" delay={0.25}>
-                <input
-                  type="text"
-                  value={formData.issue_date}
-                  onChange={(e) => setFormData(p => ({ ...p, issue_date: e.target.value }))}
-                  className={S.input}
-                  style={{ clipPath: pixelClip }}
-                  placeholder="e.g. January 2024"
-                />
-              </Field>
+                        <div className="flex-1 min-w-0">
+                          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--a-text)' }}>PDF uploaded</p>
+                          <p style={{ fontSize: 11.5, color: 'var(--a-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {formData.pdf_file.split('/').pop()}
+                          </p>
+                        </div>
 
-              {/* Credential URL */}
-              <Field
-                label="Credential URL"
-                delay={0.3}
-                hint="Optional - leave empty if using PDF only"
-              >
-                <input
-                  type="url"
-                  value={formData.credential_url}
-                  onChange={(e) => setFormData(p => ({ ...p, credential_url: e.target.value }))}
-                  className={S.input}
-                  style={{ clipPath: pixelClip }}
-                  placeholder="https://..."
-                />
-              </Field>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <a
+                            href={formData.pdf_file}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="admin-iconbtn"
+                            style={{ width: 32, height: 32 }}
+                            title="View PDF"
+                          >
+                            <ExternalLink size={15} />
+                          </a>
+                          <button
+                            type="button"
+                            className="admin-iconbtn"
+                            style={{ width: 32, height: 32, color: 'var(--a-red)' }}
+                            onClick={() => { dropUpload(formData.pdf_file, 'pdf_certif', certificate?.pdf_file); setFormData(p => ({ ...p, pdf_file: '' })) }}
+                            title="Remove PDF"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                </Field>
+
+                {/* Issue Date */}
+                <Field label="Issue date">
+                  <input
+                    type="text"
+                    value={formData.issue_date}
+                    onChange={(e) => setFormData(p => ({ ...p, issue_date: e.target.value }))}
+                    className={inputCls}
+                    placeholder="e.g. January 2024"
+                  />
+                </Field>
+
+                {/* Credential URL */}
+                <Field label="Credential URL" hint="Optional — leave empty if using PDF only">
+                  <input
+                    type="url"
+                    value={formData.credential_url}
+                    onChange={(e) => setFormData(p => ({ ...p, credential_url: e.target.value }))}
+                    className={inputCls}
+                    placeholder="https://..."
+                  />
+                </Field>
+              </div>
 
               {/* Actions */}
-              <motion.div
-                initial={{ y: 16, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.35 }}
-                className="flex gap-3 pt-4"
-                style={{ borderTop: '1px solid rgba(79,140,255,0.08)' }}
-              >
-                <button type="button" onClick={handleAttemptClose} className={S.btnGhost} style={{ clipPath: pixelClip }}>
-                  CANCEL
+              <div className="admin-modal-foot">
+                <button type="button" onClick={handleAttemptClose} className={btn.ghost + ' flex-1'}>
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving || (!certificate && !formData.pdf_file)}
-                  className={S.btnPrimary}
-                  style={{ clipPath: pixelClip }}
+                  className={btn.primary + ' flex-1'}
                 >
                   {saving ? (
                     <span className="flex items-center justify-center gap-2">
-                      <PixelSpinner /> SAVING...
+                      <Spinner /> Saving…
                     </span>
                   ) : (
-                    certificate ? 'UPDATE CERTIFICATE' : 'CREATE CERTIFICATE'
+                    certificate ? 'Update certificate' : 'Create certificate'
                   )}
                 </button>
-              </motion.div>
+              </div>
             </form>
           </motion.div>
         </motion.div>
