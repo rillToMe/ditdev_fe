@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
 import { FiLoader, FiRefreshCw } from 'react-icons/fi'
 import ZoneHeader from './systems/ZoneHeader'
 import PixelIcon from './systems/PixelIcon'
 import PixelButton from './systems/PixelButton'
+import CountUp from './systems/CountUp'
 import { SITE } from '../data/site'
-import { slideIn, stagger, scan } from '../lib/motion'
+import { slideIn, stagger, scan, EASE } from '../lib/motion'
 import type { GitHubActivityResponse, GitHubEvent, GitHubRepo } from '../types/api'
 
 const GITHUB_USERNAME = SITE.githubUser
@@ -146,7 +147,9 @@ function Readout({ value, label, accent }: { value: number; label: string; accen
       className="flex flex-col px-4 py-2.5 border bg-bg-card/40 min-w-[92px]"
       style={{ borderColor: `${accent}26`, clipPath: 'polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%)' }}
     >
-      <span className="font-pixel text-base tabular-nums" style={{ color: accent }}>{value}</span>
+      <span className="font-pixel text-base tabular-nums" style={{ color: accent }}>
+        <CountUp value={value} duration={900} />
+      </span>
       <span className="font-mono text-[9px] text-pixel-gray/40 tracking-widest uppercase mt-0.5">{label}</span>
     </div>
   )
@@ -251,28 +254,43 @@ export default function GitHubActivity() {
 
             {/* Console tabs */}
             <motion.div variants={scan} className="flex items-center gap-0 mb-6 border border-pixel-blue/15 w-fit">
-              {TABS.map(t => (
-                <button
-                  key={t.key}
-                  onClick={() => setTab(t.key)}
-                  className={`flex items-center gap-2 px-4 py-2 font-pixel text-[9px] tracking-widest transition-colors ${
-                    tab === t.key
-                      ? 'bg-pixel-blue/20 text-pixel-cyan border-b-2 border-pixel-cyan'
-                      : 'text-pixel-gray/40 hover:text-pixel-gray/70 hover:bg-pixel-blue/5'
-                  }`}
-                >
-                  <PixelIcon name={t.icon} size={11} />
-                  {t.label}
-                </button>
-              ))}
+              {TABS.map(t => {
+                const isActive = tab === t.key
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => setTab(t.key)}
+                    className={`relative flex items-center gap-2 px-4 py-2 font-pixel text-[9px] tracking-widest transition-colors ${
+                      isActive
+                        ? 'text-pixel-cyan'
+                        : 'text-pixel-gray/40 hover:text-pixel-gray/70 hover:bg-pixel-blue/5'
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.span
+                        layoutId="github-tab-active"
+                        className="absolute inset-0 bg-pixel-blue/20 border-b-2 border-pixel-cyan"
+                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative flex items-center gap-2">
+                      <PixelIcon name={t.icon} size={11} />
+                      {t.label}
+                    </span>
+                  </button>
+                )
+              })}
             </motion.div>
 
+            <AnimatePresence mode="wait">
             {/* Tab: signal */}
             {tab === 'signal' && (
               <motion.div
                 key="signal"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.22, ease: EASE.snap }}
                 className="p-5 sm:p-6 border border-pixel-blue/15 bg-bg-card/20 relative"
                 style={{ clipPath: 'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))' }}
               >
@@ -290,7 +308,7 @@ export default function GitHubActivity() {
 
             {/* Tab: log */}
             {tab === 'log' && (
-              <motion.div key="log" variants={stagger(0.05)} initial="hidden" animate="show" className="space-y-1.5">
+              <motion.div key="log" variants={stagger(0.05)} initial="hidden" animate="show" exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="space-y-1.5">
                 <div className="flex items-center gap-2 mb-3 font-mono text-[10px] text-pixel-gray/40">
                   <span className="w-2 h-2 bg-red-400/60" />
                   <span className="w-2 h-2 bg-yellow-400/60" />
@@ -314,7 +332,7 @@ export default function GitHubActivity() {
 
             {/* Tab: repos */}
             {tab === 'repos' && (
-              <motion.div key="repos" variants={stagger(0.08)} initial="hidden" animate="show" className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <motion.div key="repos" variants={stagger(0.08)} initial="hidden" animate="show" exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {repos.length === 0 ? (
                   <div className="col-span-full text-center py-12 border border-pixel-blue/10">
                     <p className="font-pixel text-pixel-gray/30 text-xs">NO REPOS FOUND</p>
@@ -367,6 +385,7 @@ export default function GitHubActivity() {
                 </div>
               </motion.div>
             )}
+            </AnimatePresence>
           </motion.div>
         )}
       </div>

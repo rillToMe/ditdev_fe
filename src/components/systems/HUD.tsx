@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import PixelIcon from './PixelIcon'
+import CountUp from './CountUp'
 import { useAchievements } from './AchievementsProvider'
 import { SITE } from '../../data/site'
 import { EASE } from '../../lib/motion'
@@ -49,7 +50,7 @@ export default function HUD({ onOpenConsole }: HUDProps) {
               animate={{ opacity: 1, y: 0 }}
               className="font-pixel text-[8px] text-yellow-400/90 shrink-0 tabular-nums"
             >
-              {xp}
+              <CountUp value={xp} duration={700} />
             </motion.span>
           </div>
 

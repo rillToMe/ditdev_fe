@@ -658,6 +658,83 @@
   display: none;
 }
 
+/* ── CHANGLI-AI chat window ───────────────────────────────────────────
+   Scanline sweep used across the portrait, the reply bubble while it is
+   still "decrypting", and the panel chrome. */
+@keyframes chatScan {
+  0%   { transform: translateY(-120%); opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translateY(520%); opacity: 0; }
+}
+.chat-scanline { animation: chatScan 3.4s linear infinite; }
+
+/* Streaming caret at the tail of a reply being revealed. */
+@keyframes chatCaret {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.chat-caret { animation: chatCaret 0.85s step-end infinite; }
+
+/* Slim, cyan-on-dark scrollbar for the message log. */
+.chat-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 212, 255, 0.35) transparent;
+}
+.chat-scroll::-webkit-scrollbar { width: 6px; }
+.chat-scroll::-webkit-scrollbar-track { background: rgba(79, 140, 255, 0.05); }
+.chat-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.28);
+}
+.chat-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 212, 255, 0.5);
+}
+
+/* ── Route transition curtain ─────────────────────────────────────────
+   A pixel scan bar that sweeps top→bottom over the incoming page on every
+   client-side navigation. Hidden by default; RouteTransition re-triggers
+   `.route-curtain-run` per pathname change. */
+.route-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 9993;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 212, 255, 0) 0%,
+    rgba(0, 212, 255, 0.06) 42%,
+    rgba(79, 140, 255, 0.16) 50%,
+    rgba(0, 212, 255, 0.06) 58%,
+    rgba(0, 212, 255, 0) 100%
+  );
+}
+.route-curtain::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  top: 0;
+  background: linear-gradient(90deg, transparent, #00d4ff, #4f8cff, transparent);
+  box-shadow: 0 0 12px 2px rgba(0, 212, 255, 0.7);
+}
+.route-curtain-run {
+  animation: routeCurtain 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.route-curtain-run::after {
+  animation: routeCurtainLine 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes routeCurtain {
+  0%   { opacity: 0; }
+  35%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes routeCurtainLine {
+  0%   { top: 0; opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
 /* ── Accessibility: honour reduced-motion globally ──────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,

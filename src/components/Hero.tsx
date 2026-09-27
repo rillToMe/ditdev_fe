@@ -1,10 +1,12 @@
-import { useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { useCallback, useEffect, useRef } from 'react'
+import { motion, useScroll, useTransform, useSpring, useReducedMotion } from 'framer-motion'
 import PixelIcon from './systems/PixelIcon'
 import PixelButton from './systems/PixelButton'
+import ScrambleText from './systems/ScrambleText'
 import { SOCIALS, SITE } from '../data/site'
 import useTypewriter from '../hooks/useTypewriter'
 import { useInViewport } from './systems/useInViewport'
+import { useMotionActive } from '../hooks/useMotionGuard'
 import { DUR, EASE, stagger, assemble } from '../lib/motion'
 
 const ROLES = [
@@ -27,15 +29,33 @@ interface Star {
 }
 
 /** Title screen: parallax starfield, player plate, menu-style actions. */
-export default function Hero() {
+export default function Hero({ play = true }: { play?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const sectionRef = useRef<HTMLElement>(null)
   const typed = useTypewriter(ROLES, 80, 40, 1800)
   const { ref: viewRef, inView } = useInViewport<HTMLElement>({ rootMargin: '0px' })
+  const motionActive = useMotionActive()
+  const reduced = useReducedMotion()
 
-  // Starfield — paused when the title screen scrolls away.
+  // ── Scroll-driven depth: as the title screen leaves, the content sinks
+  //    and blurs while the starfield keeps drifting — a "flying away" feel.
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start start', 'end start'],
+  })
+  const smooth = useSpring(scrollYProgress, { stiffness: 90, damping: 26, mass: 0.4 })
+  const contentY = useTransform(smooth, [0, 1], [0, 140])
+  const contentOpacity = useTransform(smooth, [0, 0.65, 1], [1, 0.35, 0])
+  const contentScale = useTransform(smooth, [0, 1], [1, 0.94])
+  const contentBlur = useTransform(smooth, [0, 1], ['blur(0px)', 'blur(6px)'])
+  const glowY = useTransform(smooth, [0, 1], [0, -180])
+  const promptOpacity = useTransform(smooth, [0, 0.2], [1, 0])
+
+  // Starfield — paused when the title screen scrolls away, the tab is hidden,
+  // or the player prefers reduced motion.
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas || !inView) return
+    if (!canvas || !inView || !motionActive) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
@@ -96,27 +116,41 @@ export default function Hero() {
       window.removeEventListener('resize', resize)
       window.removeEventListener('mousemove', onMove)
     }
-  }, [inView])
+  }, [inView, motionActive])
 
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+
+  // Both the scroll-progress target and the viewport observer need the section.
+  // useCallback keeps the ref identity stable so React doesn't detach/reattach
+  // it (and re-measure useScroll) on every render.
+  const setRefs = useCallback((el: HTMLElement | null) => {
+    sectionRef.current = el
+    viewRef.current = el
+  }, [viewRef])
 
   return (
     <section
       id="home"
-      ref={viewRef}
+      ref={setRefs}
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
     >
       <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" />
       <div className="absolute inset-0 grid-faint opacity-70 pointer-events-none" />
-      <div
+      <motion.div
+        style={reduced ? undefined : { y: glowY }}
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[620px] h-[620px] rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(79,140,255,0.07) 0%, rgba(0,212,255,0.03) 42%, transparent 70%)' }}
-      />
+      >
+        <div
+          className="w-full h-full rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(79,140,255,0.07) 0%, rgba(0,212,255,0.03) 42%, transparent 70%)' }}
+        />
+      </motion.div>
 
       <motion.div
+        style={reduced ? undefined : { y: contentY, opacity: contentOpacity, scale: contentScale, filter: contentBlur }}
         variants={stagger(0.11, 0.15)}
         initial="hidden"
-        animate="show"
+        animate={play ? 'show' : 'hidden'}
         className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-24 pb-10"
       >
         {/* Save-slot header */}
@@ -134,10 +168,10 @@ export default function Hero() {
           </p>
           <h1 className="font-pixel leading-[1.35] mb-3">
             <span className="block text-3xl sm:text-5xl lg:text-6xl text-pixel-white">
-              {SITE.firstName}
+              <ScrambleText text={SITE.firstName} speed={55} play={play} />
             </span>
             <span className="block text-3xl sm:text-5xl lg:text-6xl gradient-text">
-              {SITE.lastName}
+              <ScrambleText text={SITE.lastName} speed={55} delay={220} play={play} />
             </span>
           </h1>
         </motion.div>
@@ -194,25 +228,31 @@ export default function Hero() {
         </motion.div>
       </motion.div>
 
-      {/* Press-to-scroll prompt */}
-      <motion.button
-        onClick={() => scrollTo('about')}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.4, duration: DUR.slow, ease: EASE.snap }}
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 group"
-        aria-label="Scroll to About"
+      {/* Press-to-scroll prompt — entrance delay on the inner button, scroll
+          fade-out on the outer wrapper (two opacity sources must not collide). */}
+      <motion.div
+        style={reduced ? undefined : { opacity: promptOpacity }}
+        className="absolute bottom-4 left-1/2 -translate-x-1/2"
       >
-        <span className="font-pixel text-pixel-gray/40 group-hover:text-pixel-cyan/70 text-[8px] tracking-widest transition-colors">
-          PRESS ▼ TO START
-        </span>
-        <motion.div
-          animate={{ y: [0, 4, 0] }}
-          transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+        <motion.button
+          onClick={() => scrollTo('about')}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.4, duration: DUR.slow, ease: EASE.snap }}
+          className="flex flex-col items-center gap-2 group"
+          aria-label="Scroll to About"
         >
-          <PixelIcon name="chevronDown" size={14} className="text-pixel-blue/50 group-hover:text-pixel-cyan transition-colors" />
-        </motion.div>
-      </motion.button>
+          <span className="font-pixel text-pixel-gray/40 group-hover:text-pixel-cyan/70 text-[8px] tracking-widest transition-colors">
+            PRESS ▼ TO START
+          </span>
+          <motion.div
+            animate={{ y: [0, 4, 0] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <PixelIcon name="chevronDown" size={14} className="text-pixel-blue/50 group-hover:text-pixel-cyan transition-colors" />
+          </motion.div>
+        </motion.button>
+      </motion.div>
     </section>
   )
 }

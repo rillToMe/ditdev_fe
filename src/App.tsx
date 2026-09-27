@@ -6,12 +6,14 @@ import { MotionConfig } from 'framer-motion'
 import SectionLoader   from './custom/SectionLoader'
 import IdleManager     from './custom/IdleManager'
 import NotFound        from './custom/NotFound'
+import RouteTransition from './custom/RouteTransition'
 const AdminApp = lazy(() => import('./admin/App'))
 
 import { AchievementsProvider } from './components/systems/AchievementsProvider'
 import AchievementToast from './components/systems/AchievementToast'
 import DevConsole      from './components/systems/DevConsole'
 import HUD             from './components/systems/HUD'
+import ScrollProgress  from './components/systems/ScrollProgress'
 import useZoneTracking from './components/systems/useZoneTracking'
 import { SITE } from './data/site'
 
@@ -138,11 +140,12 @@ function Portfolio() {
         }}
       />
       {!loaded && <GameLoadingScreen onComplete={handleIntroComplete} />}
+      <ScrollProgress />
       <div className={`transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <Navbar />
         <HUD onOpenConsole={() => setConsoleOpen(true)} />
         <main className="relative z-10">
-          <Hero />
+          <Hero play={loaded} />
           <About />
 
           <div ref={preloadRef}></div>
@@ -183,13 +186,15 @@ export default function App() {
         <AchievementsProvider>
           <IdleManager>
             <Suspense fallback={null}>
-              <Routes>
-                <Route path="/" element={<Portfolio />} />
-                <Route path="/projects/:nameprojects" element={<ProjectDetail />} />
-                <Route path="/admin" element={<AdminApp />} />
-                <Route path="/admin/*" element={<AdminApp />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <RouteTransition>
+                <Routes>
+                  <Route path="/" element={<Portfolio />} />
+                  <Route path="/projects/:nameprojects" element={<ProjectDetail />} />
+                  <Route path="/admin" element={<AdminApp />} />
+                  <Route path="/admin/*" element={<AdminApp />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </RouteTransition>
             </Suspense>
           </IdleManager>
         </AchievementsProvider>

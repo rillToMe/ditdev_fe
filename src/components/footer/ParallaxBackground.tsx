@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useMotionActive } from '../../hooks/useMotionGuard'
 
 import layer1 from '../../assets/footer_parallax/nature/1.png'
 import layer2 from '../../assets/footer_parallax/nature/2.png'
@@ -25,6 +26,7 @@ export default function ParallaxBackground() {
   const offsetsRef = useRef(LAYERS.map(() => 0))
   const imagesRef  = useRef<(HTMLImageElement | undefined)[]>([])
   const animRef    = useRef(0)
+  const motionActive = useMotionActive()
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -61,8 +63,8 @@ export default function ParallaxBackground() {
         const img = imagesRef.current[i]
         if (!img?.complete) return
 
-        // Update offset scroll
-        offsetsRef.current[i] = (offsetsRef.current[i] - layer.speed)
+        // Update offset scroll (frozen when motion is off — static scene).
+        if (motionActive) offsetsRef.current[i] = (offsetsRef.current[i] - layer.speed)
 
         const drawH = H
         const drawW = (img.width / img.height) * drawH
@@ -90,7 +92,9 @@ export default function ParallaxBackground() {
         }
       })
 
-      animRef.current = requestAnimationFrame(animate)
+      // Only keep scheduling frames while motion is allowed; otherwise this
+      // final paint stands as the static scene.
+      if (motionActive) animRef.current = requestAnimationFrame(animate)
     }
 
     animate()
@@ -100,7 +104,7 @@ export default function ParallaxBackground() {
       ro.disconnect()
       window.removeEventListener('resize', resize)
     }
-  }, [])
+  }, [motionActive])
 
   return (
     <canvas

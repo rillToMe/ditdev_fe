@@ -14,6 +14,7 @@ import ZoneHeader from './systems/ZoneHeader'
 import PixelIcon from './systems/PixelIcon'
 import { useAchievements } from './systems/AchievementsProvider'
 import { useInViewport } from './systems/useInViewport'
+import { useMotionActive } from '../hooks/useMotionGuard'
 import { DUR, EASE } from '../lib/motion'
 
 type Tier = 'legendary' | 'advanced' | 'intermediate' | 'apprentice'
@@ -253,6 +254,8 @@ export default function Skills() {
   const { record } = useAchievements()
   // Pause the canvas loop entirely when the constellation is off screen.
   const { ref: viewRef, inView } = useInViewport<HTMLDivElement>({ rootMargin: '160px' })
+  // …and also when the tab is backgrounded or the user prefers reduced motion.
+  const motionActive = useMotionActive()
 
   // Inspecting a star counts toward STARGAZER (6 distinct skills).
   const inspected = useRef<Set<string>>(new Set())
@@ -464,11 +467,11 @@ export default function Skills() {
   }, [canvasSize, hoveredSkill, isVisible, getPos])
 
   useEffect(() => {
-    if (!inView) return
+    if (!inView || !motionActive) return
     cancelAnimationFrame(animFrameRef.current)
     animFrameRef.current = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(animFrameRef.current)
-  }, [draw, inView])
+  }, [draw, inView, motionActive])
 
   useEffect(() => {
     const el = containerRef.current
@@ -518,21 +521,34 @@ export default function Skills() {
 
         {/* Category filter */}
         <div className="mb-6 flex flex-wrap gap-2">
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`flex items-center gap-1.5 font-mono text-xs px-3 py-1.5 border transition-colors ${
-                activeCategory === cat.id
-                  ? 'border-pixel-cyan/70 text-pixel-cyan bg-pixel-cyan/10'
-                  : 'border-pixel-blue/20 text-pixel-gray/50 hover:border-pixel-blue/50 hover:text-pixel-white/70'
-              }`}
-              style={{ clipPath: 'polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%)' }}
-            >
-              {activeCategory === cat.id && <PixelIcon name="dot" size={7} />}
-              {cat.label}
-            </button>
-          ))}
+          {CATEGORIES.map(cat => {
+            const isActive = activeCategory === cat.id
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`group relative flex items-center gap-1.5 font-mono text-xs px-3 py-1.5 border transition-colors ${
+                  isActive
+                    ? 'border-pixel-cyan/70 text-pixel-cyan'
+                    : 'border-pixel-blue/20 text-pixel-gray/50 hover:border-pixel-blue/50 hover:text-pixel-white/70'
+                }`}
+                style={{ clipPath: 'polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%)' }}
+              >
+                {isActive && (
+                  <motion.span
+                    layoutId="skills-filter-active"
+                    className="absolute inset-0 bg-pixel-cyan/10"
+                    style={{ clipPath: 'polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%)' }}
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
+                )}
+                <span className="relative flex items-center gap-1.5">
+                  {isActive && <PixelIcon name="dot" size={7} />}
+                  {cat.label}
+                </span>
+              </button>
+            )
+          })}
         </div>
 
         {/* Constellation canvas */}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { SITE } from '../data/site'
+import { useMotionActive } from '../hooks/useMotionGuard'
 import catSprite from '../assets/footer_parallax/cat/cat_walk.png'
 
 const FRAME_WIDTH  = 32
@@ -42,6 +43,7 @@ export default function GameLoadingScreen({ onComplete }: GameLoadingScreenProps
   const animRef      = useRef(0)
   const frameRef     = useRef(0)
   const lastTimeRef  = useRef(0)
+  const motionActive = useMotionActive()
 
   const [progress,  setProgress]  = useState(0)
   const [message,   setMessage]   = useState(LOADING_MESSAGES[0])
@@ -98,6 +100,26 @@ export default function GameLoadingScreen({ onComplete }: GameLoadingScreenProps
     const sprite = new Image()
     sprite.src   = catSprite
 
+    const drawFrame = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.imageSmoothingEnabled = false
+      ctx.drawImage(
+        sprite,
+        frameRef.current * FRAME_WIDTH, 0,
+        FRAME_WIDTH, FRAME_HEIGHT,
+        0, 0,
+        FRAME_WIDTH * SCALE,
+        FRAME_HEIGHT * SCALE
+      )
+    }
+
+    // Reduced motion / hidden tab: one static frame, no loop.
+    if (!motionActive) {
+      if (sprite.complete) drawFrame()
+      else sprite.onload = drawFrame
+      return
+    }
+
     const interval = 1000 / FPS
 
     const animate = (timestamp: number) => {
@@ -107,16 +129,7 @@ export default function GameLoadingScreen({ onComplete }: GameLoadingScreenProps
       }
       if (timestamp - lastTimeRef.current >= interval) {
         lastTimeRef.current = timestamp
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
-        ctx.imageSmoothingEnabled = false
-        ctx.drawImage(
-          sprite,
-          frameRef.current * FRAME_WIDTH, 0,
-          FRAME_WIDTH, FRAME_HEIGHT,
-          0, 0,
-          FRAME_WIDTH * SCALE,
-          FRAME_HEIGHT * SCALE
-        )
+        drawFrame()
         frameRef.current = (frameRef.current + 1) % TOTAL_FRAMES
       }
       animRef.current = requestAnimationFrame(animate)
@@ -124,7 +137,7 @@ export default function GameLoadingScreen({ onComplete }: GameLoadingScreenProps
 
     animRef.current = requestAnimationFrame(animate)
     return () => cancelAnimationFrame(animRef.current)
-  }, [])
+  }, [motionActive])
 
   // Progress simulation
   useEffect(() => {

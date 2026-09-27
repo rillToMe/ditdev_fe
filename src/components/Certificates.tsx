@@ -5,6 +5,7 @@ import { FiLoader, FiCalendar, FiX } from 'react-icons/fi'
 import ZoneHeader from './systems/ZoneHeader'
 import PixelIcon from './systems/PixelIcon'
 import PixelButton from './systems/PixelButton'
+import TiltCard from './systems/TiltCard'
 import { certificatesAPI } from '../services/api'
 import { scalePop, stagger, assemble, VIEWPORT, DUR, EASE } from '../lib/motion'
 import type { Certificate } from '../types/api'
@@ -30,13 +31,17 @@ function CertCard({ cert, index, onClick }: { cert: Certificate; index: number; 
   const date = formatDate(cert.issue_date)
 
   return (
-    <motion.button
-      type="button"
+    <TiltCard
       variants={scalePop}
+      max={8}
+      lift={6}
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } }}
+      aria-label={`View ${cert.title}`}
       className="group relative flex flex-col items-center text-center p-5 border border-yellow-400/15 bg-bg-card/30 hover:border-yellow-400/45 hover:bg-bg-hover/30 transition-colors outline-none focus-visible:border-yellow-400/70"
       style={{ clipPath: 'polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))' }}
-      aria-label={`View ${cert.title}`}
     >
       {/* Certificate document */}
       <div className="relative w-full mb-4 mt-1">
@@ -87,7 +92,7 @@ function CertCard({ cert, index, onClick }: { cert: Certificate; index: number; 
       <span className="absolute top-2.5 left-3 font-pixel text-[8px] text-yellow-400/25">
         {String(index + 1).padStart(2, '0')}
       </span>
-    </motion.button>
+    </TiltCard>
   )
 }
 

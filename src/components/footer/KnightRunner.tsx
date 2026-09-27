@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useMotionActive } from '../../hooks/useMotionGuard'
 import runSprite from '../../assets/footer_parallax/knight/_Run.png'
 
 const FRAME_WIDTH  = 120
@@ -14,6 +15,7 @@ export default function KnightRunner() {
   const frameRef  = useRef(0)
   const animRef   = useRef(0)
   const lastTime  = useRef(0)
+  const motionActive = useMotionActive()
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -28,6 +30,26 @@ export default function KnightRunner() {
     const sprite = new Image()
     sprite.src   = runSprite
 
+    const drawFrame = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.imageSmoothingEnabled = false
+      ctx.drawImage(
+        sprite,
+        frameRef.current * FRAME_WIDTH, 0,
+        FRAME_WIDTH, FRAME_HEIGHT,
+        0, 0,
+        FRAME_WIDTH  * SCALE,
+        FRAME_HEIGHT * SCALE
+      )
+    }
+
+    // Reduced motion / hidden tab: paint a single idle pose, run no loop.
+    if (!motionActive) {
+      if (sprite.complete) drawFrame()
+      else sprite.onload = drawFrame
+      return
+    }
+
     const interval = 1000 / FPS
 
     const animate = (timestamp: number) => {
@@ -38,18 +60,7 @@ export default function KnightRunner() {
 
       if (timestamp - lastTime.current >= interval) {
         lastTime.current = timestamp
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
-        ctx.imageSmoothingEnabled = false
-
-        ctx.drawImage(
-          sprite,
-          frameRef.current * FRAME_WIDTH, 0,
-          FRAME_WIDTH, FRAME_HEIGHT,
-          0, 0,
-          FRAME_WIDTH  * SCALE,
-          FRAME_HEIGHT * SCALE
-        )
-
+        drawFrame()
         frameRef.current = (frameRef.current + 1) % TOTAL_FRAMES
       }
 
@@ -58,7 +69,7 @@ export default function KnightRunner() {
 
     animRef.current = requestAnimationFrame(animate)
     return () => cancelAnimationFrame(animRef.current)
-  }, [])
+  }, [motionActive])
 
   return (
     <canvas

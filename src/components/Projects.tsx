@@ -6,6 +6,7 @@ import { FiLoader } from 'react-icons/fi'
 import ZoneHeader from './systems/ZoneHeader'
 import PixelButton from './systems/PixelButton'
 import PixelIcon from './systems/PixelIcon'
+import TiltCard from './systems/TiltCard'
 import { useAchievements } from './systems/AchievementsProvider'
 import { projectsAPI } from '../services/api'
 import { slugifyTitle } from '../utils/slug'
@@ -57,8 +58,10 @@ function FeaturedQuest({ project, onOpen }: { project: Project; onOpen: () => vo
   const difficulty = getDifficulty(project)
 
   return (
-    <motion.div
+    <TiltCard
       variants={assemble}
+      max={7}
+      lift={8}
       onClick={onOpen}
       role="link"
       tabIndex={0}
@@ -111,7 +114,7 @@ function FeaturedQuest({ project, onOpen }: { project: Project; onOpen: () => vo
           <PixelIcon name="arrowRight" size={12} />
         </span>
       </div>
-    </motion.div>
+    </TiltCard>
   )
 }
 
@@ -120,8 +123,10 @@ function QuestCard({ project, index, onOpen }: { project: Project; index: number
   const difficulty = getDifficulty(project)
 
   return (
-    <motion.div
+    <TiltCard
       variants={slideIn('left', 24)}
+      max={9}
+      lift={6}
       onClick={onOpen}
       role="link"
       tabIndex={0}
@@ -187,7 +192,7 @@ function QuestCard({ project, index, onOpen }: { project: Project; index: number
           )}
         </div>
       </div>
-    </motion.div>
+    </TiltCard>
   )
 }
 
