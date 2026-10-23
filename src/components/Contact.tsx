@@ -139,7 +139,6 @@ export default function Contact() {
                     </p>
                   </div>
                   <div className="ml-auto text-right shrink-0">
-                    <p className="font-mono text-[10px] text-pixel-gray/40">LV.{r.level}</p>
                     <p className="flex items-center justify-end gap-1 font-mono text-[9px] text-green-400/70">
                       <span className="w-1.5 h-1.5 bg-green-400 animate-pulse" />ONLINE
                     </p>
@@ -179,19 +178,19 @@ export default function Contact() {
             <motion.div variants={assemble} className="flex items-center gap-2 mb-2 pb-4 border-b border-pixel-blue/10">
               <PixelIcon name="scroll" size={13} className="text-pixel-blue" />
               <span className="font-pixel text-pixel-blue text-[9px] tracking-widest">QUEST BRIEF</span>
-              <span className="ml-auto font-mono text-[10px] text-pixel-gray/30">CONTRACT №08</span>
+              <span className="ml-auto font-mono text-[10px] text-pixel-gray/30">CONTACT</span>
             </motion.div>
 
             {/* Objective + reward readout */}
             <motion.div variants={assemble} className="space-y-1.5 font-mono text-[11px] leading-relaxed text-pixel-gray/50">
               <p>
                 <span className="text-pixel-cyan/70">OBJECTIVE</span>
-                <span className="text-pixel-gray/30"> — </span>
+                <span className="text-pixel-gray/30"> - </span>
                 Register with the guild so I can reply.
               </p>
               <p>
                 <span className="text-pixel-yellow/70">REWARD</span>
-                <span className="text-pixel-gray/30"> — </span>
+                <span className="text-pixel-gray/30"> - </span>
                 1 reply, delivered by raven.
               </p>
             </motion.div>
@@ -243,9 +242,6 @@ export default function Contact() {
                 {status === 'sending' ? 'SENDING…' : status === 'sent' ? 'QUEST ACCEPTED' : 'SEND MESSAGE'}
               </PixelButton>
 
-              <p className="text-center font-mono text-[10px] text-pixel-gray/25 mt-2 tracking-widest">
-                [ENTER] TO SUBMIT
-              </p>
 
               {status === 'sent' && (
                 <motion.p
