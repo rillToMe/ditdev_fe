@@ -22,6 +22,7 @@ interface ProjectFormData {
   description: string
   content: string
   thumbnail: string
+  model_3d: string
   screenshots: string[]
   tags: string[]
   links: ProjectLink[]
@@ -53,6 +54,7 @@ export default function ProjectModal({ project, onClose, onSuccess }: ProjectMod
     description: project?.description || '',
     content: project?.content || '',
     thumbnail: project?.thumbnail || '',
+    model_3d: project?.model_3d || '',
     screenshots: project?.screenshots || [],
     tags: project?.tags || [],
     links: project?.links || [],
@@ -60,6 +62,7 @@ export default function ProjectModal({ project, onClose, onSuccess }: ProjectMod
   const [tagInput, setTagInput] = useState('')
   const [uploading, setUploading] = useState(false)
   const [uploadingShots, setUploadingShots] = useState(false)
+  const [uploadingModel, setUploadingModel] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const [imageToCrop, setImageToCrop] = useState<string | null>(null)
@@ -77,6 +80,7 @@ export default function ProjectModal({ project, onClose, onSuccess }: ProjectMod
         formData.description !== (project?.description || '') ||
         formData.content !== (project?.content || '') ||
         formData.thumbnail !== (project?.thumbnail || '') ||
+        formData.model_3d !== (project?.model_3d || '') ||
         JSON.stringify(formData.screenshots) !== JSON.stringify(project?.screenshots || []) ||
         JSON.stringify(formData.tags) !== JSON.stringify(project?.tags || []) ||
         JSON.stringify(formData.links) !== JSON.stringify(project?.links || [])
@@ -88,6 +92,7 @@ export default function ProjectModal({ project, onClose, onSuccess }: ProjectMod
       formData.description.trim() !== '' ||
       formData.content.trim() !== '' ||
       formData.thumbnail !== '' ||
+      formData.model_3d !== '' ||
       formData.screenshots.length > 0 ||
       formData.tags.length > 0 ||
       formData.links.length > 0
@@ -178,6 +183,33 @@ export default function ProjectModal({ project, onClose, onSuccess }: ProjectMod
       setUploading(false)
       setImageToCrop(null)
       setSelectedFile(null)
+    }
+  }
+
+  const handleModelSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    const MAX_MODEL_SIZE = 50 * 1024 * 1024
+    if (file.size > MAX_MODEL_SIZE) {
+      const sizeMB = (file.size / 1024 / 1024).toFixed(1)
+      alert(`File terlalu besar! "${file.name}" berukuran ${sizeMB} MB. Maksimal 50 MB — coba kompres modelnya (mis. export ulang sebagai GLB atau kurangi tekstur/poligon).`)
+      return
+    }
+    const ALLOWED_EXT = ['glb', 'gltf', 'fbx', 'obj', 'stl']
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+    if (!ALLOWED_EXT.includes(ext)) {
+      alert(`Format tidak didukung: .${ext}. Gunakan GLB, GLTF, FBX, OBJ, atau STL.`)
+      return
+    }
+    setUploadingModel(true)
+    try {
+      const data = await api.uploadModel(file)
+      setFormData(prev => ({ ...prev, model_3d: data.data.path }))
+    } catch (err) {
+      alert('Upload failed: ' + (err instanceof Error ? err.message : err))
+    } finally {
+      setUploadingModel(false)
     }
   }
 
@@ -325,6 +357,57 @@ export default function ProjectModal({ project, onClose, onSuccess }: ProjectMod
                           </button>
                         </div>
                       </motion.div>
+                    )}
+                  </div>
+                </Field>
+
+                {/* 3D Model */}
+                <Field label="3D Model" hint="GLB / GLTF / FBX / OBJ / STL · max 50 MB · shown as an interactive viewer on the project page">
+                  <div className="space-y-3">
+                    <label className="admin-dropzone">
+                      {uploadingModel ? (
+                        <>
+                          <Spinner />
+                          <span>Uploading…</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={16} />
+                          <span>{formData.model_3d ? 'Replace model' : 'Choose 3D model'}</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept=".glb,.gltf,.fbx,.obj,.stl"
+                        onChange={handleModelSelect}
+                        className="hidden"
+                        disabled={uploadingModel}
+                      />
+                    </label>
+
+                    {formData.model_3d && (
+                      <div
+                        className="flex items-center justify-between gap-3"
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: 'var(--a-radius-sm)',
+                          border: '1px solid var(--a-border)',
+                          fontSize: 13,
+                          color: 'var(--a-muted)',
+                        }}
+                      >
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {formData.model_3d.split('/').pop()}
+                        </span>
+                        <button
+                          type="button"
+                          className={btn.dangerSm}
+                          onClick={() => setFormData(prev => ({ ...prev, model_3d: '' }))}
+                          title="Remove 3D model"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </Field>

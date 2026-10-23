@@ -8,6 +8,8 @@ import { FiX, FiChevronLeft, FiChevronRight, FiLoader } from 'react-icons/fi'
 import PixelIcon from './systems/PixelIcon'
 import type { PixelIconName } from './systems/PixelIcon'
 import PixelButton from './systems/PixelButton'
+
+import ModelViewer3D from './ModelViewer3D'
 import { projectsAPI } from '../services/api'
 import { slugifyTitle } from '../utils/slug'
 import { getDifficulty, getStage } from '../utils/difficulty'
@@ -260,6 +262,7 @@ export default function ProjectDetail() {
     [project],
   )
   const hero = project ? getImageUrl(project.thumbnail) : null
+  const model3d = project?.model_3d ? getImageUrl(project.model_3d) : null
   const overview = project?.content?.trim() || project?.description || ''
   const gallery = screenshots.length > 0 ? screenshots : (hero ? [hero] : [])
   const difficulty = useMemo(() => (project ? getDifficulty(project) : null), [project])
@@ -562,6 +565,12 @@ export default function ProjectDetail() {
                     </motion.button>
                   ))}
                 </div>
+              </Panel>
+            )}
+
+            {model3d && (
+              <Panel icon="gamepad" title="3D MODEL" meta="[interactive]">
+                <ModelViewer3D url={model3d} height={360} />
               </Panel>
             )}
 

@@ -17,6 +17,7 @@ export interface Project {
   description: string
   content?: string
   thumbnail: string | null
+  model_3d?: string | null
   tags: string[] | null
   screenshots?: string[] | null
   links: ProjectLink[] | null
@@ -29,6 +30,7 @@ export interface ProjectInput {
   description?: string
   content?: string
   thumbnail?: string
+  model_3d?: string | null
   tags?: string[]
   screenshots?: string[]
   links?: ProjectLink[]

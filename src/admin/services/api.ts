@@ -176,6 +176,28 @@ const api = {
     return data as UploadResponse
   },
 
+  // Upload 3D model
+  async uploadModel(file: File): Promise<UploadResponse> {
+    const token = localStorage.getItem('admin_token')
+    const formData = new FormData()
+    formData.append('model', file)
+
+    const response = await fetch(`${API_URL}/upload/model`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    })
+
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(data.message || 'Upload model failed')
+    }
+
+    return data as UploadResponse
+  },
+
   // Stats
   getStats(): Promise<ApiResponse<Stat[]>> {
     return this.request<ApiResponse<Stat[]>>('/stats', { skipAuth: true })

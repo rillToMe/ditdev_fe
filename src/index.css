@@ -813,3 +813,36 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ── 3D Model Viewer ─────────────────────────────── */
+.model-viewer-3d {
+  position: relative;
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  background: #0a0a12;
+  overflow: hidden;
+}
+.model-viewer-canvas canvas { display: block; }
+.model-viewer-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-pixel, monospace);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--pixel-cyan, #00d4ff);
+  background: rgba(10, 10, 18, 0.7);
+  pointer-events: none;
+}
+.model-viewer-error { color: #ff5566; }
+.model-viewer-hint {
+  position: absolute;
+  bottom: 6px;
+  right: 8px;
+  font-family: monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: rgba(148, 163, 184, 0.55);
+  pointer-events: none;
+}

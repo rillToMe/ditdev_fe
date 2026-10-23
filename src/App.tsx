@@ -4,7 +4,6 @@ import { Helmet, HelmetProvider } from 'react-helmet-async'
 import { MotionConfig } from 'framer-motion'
 
 import SectionLoader   from './custom/SectionLoader'
-import IdleManager     from './custom/IdleManager'
 import NotFound        from './custom/NotFound'
 import RouteTransition from './custom/RouteTransition'
 const AdminApp = lazy(() => import('./admin/App'))
@@ -17,7 +16,6 @@ import ScrollProgress  from './components/systems/ScrollProgress'
 import useZoneTracking from './components/systems/useZoneTracking'
 import { SITE } from './data/site'
 
-import GameLoadingScreen from './components/GameLoadingScreen'
 import Navbar            from './components/Navbar'
 import Hero              from './components/Hero'
 import About             from './components/About'
@@ -76,18 +74,8 @@ function SEO() {
 }
 
 function Portfolio() {
-  // Intro plays once per browser session. `loaded` lives in sessionStorage so it
-  // survives Portfolio remounting on route changes (e.g. returning from a
-  // project detail page) — otherwise the game intro replays every time.
-  const [loaded, setLoaded] = useState(
-    () => sessionStorage.getItem('ditdev_intro_seen') === '1',
-  )
+  const [loaded] = useState(true)
   const [consoleOpen, setConsoleOpen] = useState(false)
-
-  const handleIntroComplete = () => {
-    sessionStorage.setItem('ditdev_intro_seen', '1')
-    setLoaded(true)
-  }
 
   // Tracks which zones the player has scrolled through (HUD map meter).
   useZoneTracking()
@@ -139,9 +127,8 @@ function Portfolio() {
           opacity: 0.4,
         }}
       />
-      {!loaded && <GameLoadingScreen onComplete={handleIntroComplete} />}
       <ScrollProgress />
-      <div className={`transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+      <div>
         <Navbar />
         <HUD onOpenConsole={() => setConsoleOpen(true)} />
         <main className="relative z-10">
@@ -184,7 +171,6 @@ export default function App() {
     <HelmetProvider>
       <MotionConfig reducedMotion="user">
         <AchievementsProvider>
-          <IdleManager>
             <Suspense fallback={null}>
               <RouteTransition>
                 <Routes>
@@ -196,7 +182,6 @@ export default function App() {
                 </Routes>
               </RouteTransition>
             </Suspense>
-          </IdleManager>
         </AchievementsProvider>
       </MotionConfig>
     </HelmetProvider>
